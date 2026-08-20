@@ -39,7 +39,7 @@ async def get_channel_webhook(channel) -> discord.Webhook | None:
     try:
         webhooks = await base.webhooks()
         webhook = discord.utils.get(webhooks, name=WEBHOOK_NAME)
-        if webhook is None:
+        if webhook is None or webhook.token is None:
             webhook = await base.create_webhook(name=WEBHOOK_NAME, reason="Webhook para mensajes del bot")
     except (discord.Forbidden, discord.HTTPException):
         return None
