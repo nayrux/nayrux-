@@ -16,31 +16,31 @@ PUNISHMENT_LABELS = {
 # Categorías de log disponibles y el nombre de canal que les corresponde
 # (usado por el comando de auto-configuración para crearlos y enlazarlos)
 LOG_CATEGORIES = {
-    "messages": "📩│logs-mensajes",
-    "channels": "📁│logs-canales",
-    "roles": "🎭│logs-roles",
-    "tickets": "🎫│logs-tickets",
-    "invites": "📨│logs-invitaciones",
-    "members": "👤│logs-miembros",
-    "voice": "🔊│logs-voz",
-    "mod": "🔨│logs-moderacion",
-    "emojis": "😀│logs-emojis",
-    "jail": "🚨│logs-aislados",
+    "messages": "│logs-mensajes",
+    "channels": "│logs-canales",
+    "roles": "│logs-roles",
+    "tickets": "│logs-tickets",
+    "invites": "│logs-invitaciones",
+    "members": "│logs-miembros",
+    "voice": "│logs-voz",
+    "mod": "│logs-moderacion",
+    "emojis": "│logs-emojis",
+    "jail": "│logs-aislados",
 }
 
 # Emoji, color y descripción por categoría — usado para darle estilo a los
 # embeds de log y como topic de los canales que crea ,setuplogs.
 LOG_CATEGORY_META = {
-    "messages": ("📩", 0x5865f2, "Mensajes editados y borrados"),
-    "channels": ("📁", 0x3498db, "Canales creados, eliminados o modificados"),
-    "roles": ("🎭", 0x9b59b6, "Roles creados, eliminados o con permisos modificados"),
-    "tickets": ("🎫", 0x1abc9c, "Actividad del sistema de tickets"),
-    "invites": ("📨", 0xf1c40f, "Invitaciones creadas o usadas"),
-    "members": ("👤", 0x2ecc71, "Entradas, salidas y cambios de miembros"),
-    "voice": ("🔊", 0xe67e22, "Actividad en canales de voz"),
-    "mod": ("🔨", 0xed4245, "Acciones de moderación: kicks, baneos, mutes, warns"),
-    "emojis": ("😀", 0x95a5a6, "Emojis creados o eliminados"),
-    "jail": ("🚨", 0x992d22, "Usuarios aislados y liberados"),
+    "messages": ("", 0x5865f2, "Mensajes editados y borrados"),
+    "channels": ("", 0x3498db, "Canales creados, eliminados o modificados"),
+    "roles": ("", 0x9b59b6, "Roles creados, eliminados o con permisos modificados"),
+    "tickets": ("", 0x1abc9c, "Actividad del sistema de tickets"),
+    "invites": ("", 0xf1c40f, "Invitaciones creadas o usadas"),
+    "members": ("", 0x2ecc71, "Entradas, salidas y cambios de miembros"),
+    "voice": ("", 0xe67e22, "Actividad en canales de voz"),
+    "mod": ("", 0xed4245, "Acciones de moderación: kicks, baneos, mutes, warns"),
+    "emojis": ("", 0x95a5a6, "Emojis creados o eliminados"),
+    "jail": ("", 0x992d22, "Usuarios aislados y liberados"),
 }
 
 
@@ -81,7 +81,7 @@ async def send_log(
     footer_text = embed_cfg.get("footer_text", "Protección AntiNuke")
     show_thumbnail = embed_cfg.get("thumbnail", True)
 
-    cat_emoji, cat_color, _ = LOG_CATEGORY_META.get(category, ("📋", 0x2b2d31, ""))
+    cat_emoji, cat_color, _ = LOG_CATEGORY_META.get(category, ("", 0x2b2d31, ""))
     embed_color = color or embed_cfg.get("color") or cat_color
 
     punishment = config.get("antinuke", {}).get("punishment", "ban")
