@@ -113,7 +113,7 @@ class Welcome(commands.Cog):
             color=0xfee75c if warnings else 0x57f287,
         )
         if warnings:
-            embed.add_field(name="⚠️ Revisa esto", value="\n".join(f"• {w}" for w in warnings), inline=False)
+            embed.add_field(name="Revisa esto", value="\n".join(f"• {w}" for w in warnings), inline=False)
         await ctx.send(embed=embed)
 
     @welcome.command(name="list")
