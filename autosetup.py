@@ -74,7 +74,7 @@ async def _ensure_log_channels(guild: discord.Guild) -> dict[str, int]:
 
     result = {}
     for cat_key, channel_name in LOG_CATEGORIES.items():
-        _, _, description = LOG_CATEGORY_META.get(cat_key, ("📋", 0x2b2d31, ""))
+        _, _, description = LOG_CATEGORY_META.get(cat_key, ("", 0x2b2d31, ""))
         existing = discord.utils.get(category.text_channels, name=channel_name)
         if existing is None:
             existing = await guild.create_text_channel(
@@ -107,12 +107,12 @@ class AutoSetup(commands.Cog):
         db.update_guild(ctx.guild.id, config)
 
         embed = discord.Embed(
-            title="✅ Canales de logs listos",
+            title="Canales de logs listos",
             description="Cada tipo de evento ahora se manda a su canal correspondiente.",
             color=0x57f287,
         )
         channels_text = "\n".join(
-            f"{LOG_CATEGORY_META.get(cat, ('📋','', ''))[0]} <#{cid}> — {LOG_CATEGORY_META.get(cat, ('','', ''))[2]}"
+            f"{LOG_CATEGORY_META.get(cat, ('','', ''))[0]} <#{cid}> — {LOG_CATEGORY_META.get(cat, ('','', ''))[2]}"
             for cat, cid in log_channels.items()
         )
         embed.add_field(name="Canales", value=channels_text, inline=False)
@@ -159,7 +159,7 @@ class AutoSetup(commands.Cog):
 
         # ── Embed resumen de todo lo que se configuró ──
         embed = discord.Embed(
-            title=f"✅ Preset «{label}» aplicado",
+            title=f"Preset «{label}» aplicado",
             description=description,
             color=0x57f287,
         )
@@ -176,7 +176,7 @@ class AutoSetup(commands.Cog):
         )
         if not has_log_channels:
             embed.add_field(
-                name="⚠️ Canales de logs",
+                name="Canales de logs",
                 value="Todavía no tienes canales dedicados. Usa `,setuplogs` para crearlos.",
                 inline=False,
             )
