@@ -143,11 +143,11 @@ class AntiNukeBot(commands.Bot):
             ),
             discord.Activity(
                 type=discord.CustomActivity,
-                name="Zayy Bot"
+                name="Nayrux Bot"
             ),
             discord.Activity(
                 type=discord.ActivityType.playing,
-                name="with nayrux"
+                name="Ready nayrux"
             ),
             discord.Activity(
                 type=discord.ActivityType.watching,
