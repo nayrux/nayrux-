@@ -44,7 +44,7 @@ class Embeds(commands.Cog):
 
         if warnings:
             await ctx.send(embed=discord.Embed(
-                title="⚠️ Revisa esto",
+                title="Revisa esto",
                 description="\n".join(f"• {w}" for w in warnings),
                 color=0xfee75c,
             ))
@@ -96,7 +96,7 @@ class Embeds(commands.Cog):
         await ctx.send(embed=discord.Embed(description="Embed actualizado.", color=0x57f287))
         if warnings:
             await ctx.send(embed=discord.Embed(
-                title="⚠️ Revisa esto",
+                title="Revisa esto",
                 description="\n".join(f"• {w}" for w in warnings),
                 color=0xfee75c,
             ))
