@@ -52,7 +52,7 @@ def _is_alt(member: discord.Member, altdays: int) -> bool:
 
 def _build_milestone_embed(inviter: discord.Member, count: int, reward: str, invited_ids: list) -> discord.Embed:
     embed = discord.Embed(
-        description=f"{inviter.mention} consiguió invitar **{count} personas** al servidor 🎉",
+        description=f"{inviter.mention} consiguió invitar **{count} personas** al servidor",
         color=0x2b2d31,
     )
     if reward:
@@ -252,7 +252,7 @@ class Invites(commands.Cog):
 
         sorted_counts = sorted(counts.items(), key=lambda x: x[1], reverse=True)[:5]
         lines = []
-        medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
+        medals = ["", "", "", "4⃣", "5⃣"]
         for i, (uid, count) in enumerate(sorted_counts):
             member = ctx.guild.get_member(int(uid))
             name = member.mention if member else f"`{uid}`"
