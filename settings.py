@@ -420,7 +420,7 @@ class Settings(commands.Cog):
             msg = (
                 "**Modo instantáneo activado.** Cualquier acción sospechosa (1 sola) "
                 "dispara el castigo de inmediato, sin esperar un patrón repetido.\n"
-                "⚠️ Mayor riesgo de falsos positivos con admins reales."
+                "Mayor riesgo de falsos positivos con admins reales."
             )
             color = 0xed4245
         else:
