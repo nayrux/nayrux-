@@ -19,9 +19,9 @@ import logging
 
 log = logging.getLogger("antinuke.jail")
 
-JAIL_CATEGORY_NAME = "🔒 Cuarentena"
+JAIL_CATEGORY_NAME = "Cuarentena"
 JAIL_ROLE_NAME = "Aislado"
-JAIL_CHANNEL_NAME = "⛓️│aislado"
+JAIL_CHANNEL_NAME = "│aislado"
 
 
 def _hierarchy_error(ctx: commands.Context, target: discord.Member) -> str | None:
@@ -102,7 +102,7 @@ class Jail(commands.Cog):
         db.update_guild(ctx.guild.id, config)
 
         embed = discord.Embed(
-            title="✅ Sistema de cuarentena listo",
+            title="Sistema de cuarentena listo",
             description=(
                 f"Rol: {role.mention}\n"
                 f"Canal: {jail_channel.mention}\n"
@@ -164,7 +164,7 @@ class Jail(commands.Cog):
             pass
 
         await ctx.send(embed=discord.Embed(
-            description=f"🚨 {member.mention} fue aislado.\n**Razón:** {reason}",
+            description=f"{member.mention} fue aislado.\n**Razón:** {reason}",
             color=0x57f287,
         ))
         await send_log(
@@ -201,7 +201,7 @@ class Jail(commands.Cog):
             return await ctx.send(embed=discord.Embed(description="No tengo permiso para modificar los roles de ese usuario.", color=0xed4245))
 
         await ctx.send(embed=discord.Embed(
-            description=f"✅ {member.mention} ya no está aislado. Se restauraron `{len(restored_roles)}` rol(es).",
+            description=f"{member.mention} ya no está aislado. Se restauraron `{len(restored_roles)}` rol(es).",
             color=0x57f287,
         ))
         await send_log(
