@@ -139,7 +139,7 @@ class ChannelPickView(discord.ui.View):
             except (discord.Forbidden, discord.HTTPException) as e:
                 log.warning(f"No se pudo postear en {channel}: {e}")
                 return await interaction.edit_original_response(
-                    content=f"❌ No pude mandar eso a {channel.mention}.", embed=None, view=None,
+                    content=f"No pude mandar eso a {channel.mention}.", embed=None, view=None,
                 )
 
             for item in self.children:
@@ -147,7 +147,7 @@ class ChannelPickView(discord.ui.View):
             await interaction.edit_original_response(
                 content=None,
                 embed=discord.Embed(
-                    description=f"✅ Mandé `{len(self.items)}` cosa(s) a {channel.mention}.",
+                    description=f"Mandé `{len(self.items)}` cosa(s) a {channel.mention}.",
                     color=0x57f287,
                 ),
                 view=self,
@@ -217,7 +217,7 @@ class ImageDrop(commands.Cog):
         config.pop("post_channel_id", None)  # ya migrado
         db.update_guild(ctx.guild.id, config)
         await ctx.send(embed=discord.Embed(
-            description=f"✅ Canal `{name}` → {channel.mention}. Cuando mandes links, el bot te preguntará si quieres usar este.",
+            description=f"Canal `{name}` → {channel.mention}. Cuando mandes links, el bot te preguntará si quieres usar este.",
             color=0x57f287,
         ))
 
@@ -232,7 +232,7 @@ class ImageDrop(commands.Cog):
         del channels[name]
         config["post_channels"] = channels
         db.update_guild(ctx.guild.id, config)
-        await ctx.send(embed=discord.Embed(description=f"✅ Se eliminó `{name}`.", color=0x57f287))
+        await ctx.send(embed=discord.Embed(description=f"Se eliminó `{name}`.", color=0x57f287))
 
     @commands.command(name="postchannels")
     async def postchannels(self, ctx: commands.Context):
@@ -266,7 +266,7 @@ class ImageDrop(commands.Cog):
         config["posters"] = ids
         db.update_guild(ctx.guild.id, config)
         await ctx.send(embed=discord.Embed(
-            description=f"✅ {member.mention} ahora puede mandar links por DM.",
+            description=f"{member.mention} ahora puede mandar links por DM.",
             color=0x57f287,
         ))
 
@@ -280,7 +280,7 @@ class ImageDrop(commands.Cog):
         ids.remove(member.id)
         config["posters"] = ids
         db.update_guild(ctx.guild.id, config)
-        await ctx.send(embed=discord.Embed(description=f"✅ Se quitó el acceso de {member.mention}.", color=0x57f287))
+        await ctx.send(embed=discord.Embed(description=f"Se quitó el acceso de {member.mention}.", color=0x57f287))
 
     # ── Comando directo desde el server ─────────────────────────────────────
 
