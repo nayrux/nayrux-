@@ -134,11 +134,11 @@ class Moderation(commands.Cog):
         _add_mod_action(ctx.guild.id, member.id, "kick", ctx.author.id, reason)
 
         await ctx.send(embed=discord.Embed(
-            description=f"👢 {member.mention} fue expulsado.\n**Razón:** {reason}",
+            description=f"{member.mention} fue expulsado.\n**Razón:** {reason}",
             color=0x57f287,
         ))
         await _send_mod_log(
-            ctx.guild, title="👢 Expulsión Manual", target=member, moderator=ctx.author,
+            ctx.guild, title="Expulsión Manual", target=member, moderator=ctx.author,
             reason=reason, color=0xed4245,
         )
 
@@ -163,11 +163,11 @@ class Moderation(commands.Cog):
         _add_mod_action(ctx.guild.id, member.id, "ban", ctx.author.id, reason)
 
         await ctx.send(embed=discord.Embed(
-            description=f"🔨 {member.mention} fue baneado.\n**Razón:** {reason}",
+            description=f"{member.mention} fue baneado.\n**Razón:** {reason}",
             color=0x57f287,
         ))
         await _send_mod_log(
-            ctx.guild, title="🔨 Baneo Manual", target=member, moderator=ctx.author,
+            ctx.guild, title="Baneo Manual", target=member, moderator=ctx.author,
             reason=reason, color=0xed4245,
         )
 
@@ -185,11 +185,11 @@ class Moderation(commands.Cog):
         _add_mod_action(ctx.guild.id, member.id, "softban", ctx.author.id, reason)
 
         await ctx.send(embed=discord.Embed(
-            description=f"🧹 {member.mention} recibió un softban (mensajes borrados, puede volver a entrar).\n**Razón:** {reason}",
+            description=f"{member.mention} recibió un softban (mensajes borrados, puede volver a entrar).\n**Razón:** {reason}",
             color=0x57f287,
         ))
         await _send_mod_log(
-            ctx.guild, title="🧹 Softban", target=member, moderator=ctx.author,
+            ctx.guild, title="Softban", target=member, moderator=ctx.author,
             reason=reason, color=0xed4245,
         )
 
@@ -206,11 +206,11 @@ class Moderation(commands.Cog):
         _add_mod_action(ctx.guild.id, user_id, "unban", ctx.author.id, reason)
 
         await ctx.send(embed=discord.Embed(
-            description=f"✅ `{ban_entry.user}` fue desbaneado.\n**Razón:** {reason}",
+            description=f"`{ban_entry.user}` fue desbaneado.\n**Razón:** {reason}",
             color=0x57f287,
         ))
         await _send_mod_log(
-            ctx.guild, title="✅ Desbaneo Manual", target=ban_entry.user, moderator=ctx.author,
+            ctx.guild, title="Desbaneo Manual", target=ban_entry.user, moderator=ctx.author,
             reason=reason, color=0x57f287,
         )
 
@@ -238,11 +238,11 @@ class Moderation(commands.Cog):
         _add_mod_action(ctx.guild.id, member.id, "mute", ctx.author.id, f"{reason} ({duration})")
 
         await ctx.send(embed=discord.Embed(
-            description=f"🔇 {member.mention} fue silenciado por `{duration}`.\n**Razón:** {reason}",
+            description=f"{member.mention} fue silenciado por `{duration}`.\n**Razón:** {reason}",
             color=0x57f287,
         ))
         await _send_mod_log(
-            ctx.guild, title="🔇 Silencio Manual", target=member, moderator=ctx.author,
+            ctx.guild, title="Silencio Manual", target=member, moderator=ctx.author,
             reason=reason, extra_fields=[("Duración", f"`{duration}`", True)], color=0xed4245,
         )
 
@@ -257,11 +257,11 @@ class Moderation(commands.Cog):
         _add_mod_action(ctx.guild.id, member.id, "unmute", ctx.author.id, reason)
 
         await ctx.send(embed=discord.Embed(
-            description=f"🔊 {member.mention} ya no está silenciado.\n**Razón:** {reason}",
+            description=f"{member.mention} ya no está silenciado.\n**Razón:** {reason}",
             color=0x57f287,
         ))
         await _send_mod_log(
-            ctx.guild, title="🔊 Fin de Silencio", target=member, moderator=ctx.author,
+            ctx.guild, title="Fin de Silencio", target=member, moderator=ctx.author,
             reason=reason, color=0x57f287,
         )
 
@@ -296,11 +296,11 @@ class Moderation(commands.Cog):
             pass
 
         await ctx.send(embed=discord.Embed(
-            description=f"⚠️ {member.mention} fue advertido (total: `{total}`).\n**Razón:** {reason}",
+            description=f"{member.mention} fue advertido (total: `{total}`).\n**Razón:** {reason}",
             color=0x57f287,
         ))
         await _send_mod_log(
-            ctx.guild, title="⚠️ Advertencia", target=member, moderator=ctx.author,
+            ctx.guild, title="Advertencia", target=member, moderator=ctx.author,
             reason=reason, extra_fields=[("Total de Advertencias", f"`{total}`", True)], color=0xfee75c,
         )
 
@@ -339,7 +339,7 @@ class Moderation(commands.Cog):
         db.update_guild(ctx.guild.id, config)
 
         await ctx.send(embed=discord.Embed(
-            description=f"🧹 Se borraron `{count}` advertencia(s) de {member.mention}.",
+            description=f"Se borraron `{count}` advertencia(s) de {member.mention}.",
             color=0x57f287,
         ))
 
@@ -363,7 +363,7 @@ class Moderation(commands.Cog):
         db.update_guild(ctx.guild.id, config)
 
         await ctx.send(embed=discord.Embed(
-            description=f"🗑️ Se eliminó la advertencia #{index} de {member.mention}: *{removed.get('reason', '')}*",
+            description=f"Se eliminó la advertencia #{index} de {member.mention}: *{removed.get('reason', '')}*",
             color=0x57f287,
         ))
 
@@ -382,7 +382,7 @@ class Moderation(commands.Cog):
         deleted = await ctx.channel.purge(limit=amount, check=check)
 
         msg = await ctx.send(embed=discord.Embed(
-            description=f"🧹 Se borraron `{len(deleted)}` mensaje(s)"
+            description=f"Se borraron `{len(deleted)}` mensaje(s)"
                         + (f" de {member.mention}" if member else "") + ".",
             color=0x57f287,
         ))
@@ -400,7 +400,7 @@ class Moderation(commands.Cog):
         await channel.set_permissions(ctx.guild.default_role, overwrite=overwrite, reason=f"Bloqueado por {ctx.author}")
 
         await ctx.send(embed=discord.Embed(
-            description=f"🔒 {channel.mention} fue bloqueado. @everyone ya no puede escribir aquí.",
+            description=f"{channel.mention} fue bloqueado. @everyone ya no puede escribir aquí.",
             color=0x57f287,
         ))
 
@@ -414,7 +414,7 @@ class Moderation(commands.Cog):
         await channel.set_permissions(ctx.guild.default_role, overwrite=overwrite, reason=f"Desbloqueado por {ctx.author}")
 
         await ctx.send(embed=discord.Embed(
-            description=f"🔓 {channel.mention} fue desbloqueado.",
+            description=f"{channel.mention} fue desbloqueado.",
             color=0x57f287,
         ))
 
@@ -427,9 +427,9 @@ class Moderation(commands.Cog):
         await channel.edit(slowmode_delay=seconds, reason=f"Slowmode ajustado por {ctx.author}")
 
         if seconds == 0:
-            desc = f"⏱️ Slowmode desactivado en {channel.mention}."
+            desc = f"Slowmode desactivado en {channel.mention}."
         else:
-            desc = f"⏱️ Slowmode de {channel.mention} ajustado a `{seconds}s`."
+            desc = f"Slowmode de {channel.mention} ajustado a `{seconds}s`."
         await ctx.send(embed=discord.Embed(description=desc, color=0x57f287))
 
     # ── Nick / Roles ─────────────────────────────────────────────────────────
@@ -446,7 +446,7 @@ class Moderation(commands.Cog):
                 return await ctx.send(embed=discord.Embed(description=error, color=0xed4245))
 
         await member.edit(nick=nickname, reason=f"Apodo cambiado por {ctx.author}")
-        desc = f"✏️ Se restableció el apodo de {member.mention}." if nickname is None else f"✏️ El apodo de {member.mention} ahora es **{nickname}**."
+        desc = f"Se restableció el apodo de {member.mention}." if nickname is None else f"El apodo de {member.mention} ahora es **{nickname}**."
         await ctx.send(embed=discord.Embed(description=desc, color=0x57f287))
 
     @commands.group(name="role", invoke_without_command=True)
@@ -467,7 +467,7 @@ class Moderation(commands.Cog):
 
         await member.add_roles(role, reason=f"Añadido por {ctx.author}")
         await ctx.send(embed=discord.Embed(
-            description=f"✅ Se añadió el rol {role.mention} a {member.mention}.",
+            description=f"Se añadió el rol {role.mention} a {member.mention}.",
             color=0x57f287,
         ))
 
@@ -482,7 +482,7 @@ class Moderation(commands.Cog):
 
         await member.remove_roles(role, reason=f"Removido por {ctx.author}")
         await ctx.send(embed=discord.Embed(
-            description=f"✅ Se quitó el rol {role.mention} a {member.mention}.",
+            description=f"Se quitó el rol {role.mention} a {member.mention}.",
             color=0x57f287,
         ))
 
@@ -500,9 +500,9 @@ class Moderation(commands.Cog):
             ))
 
         labels = {
-            "kick": "👢 Expulsión", "ban": "🔨 Baneo", "softban": "🧹 Softban",
-            "unban": "✅ Desbaneo", "mute": "🔇 Silencio", "unmute": "🔊 Fin de silencio",
-            "warn": "⚠️ Advertencia",
+            "kick": "Expulsión", "ban": "Baneo", "softban": "Softban",
+            "unban": "Desbaneo", "mute": "Silencio", "unmute": "Fin de silencio",
+            "warn": "Advertencia",
         }
         lines = []
         for entry in entries[-15:]:
