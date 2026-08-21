@@ -20,7 +20,7 @@ from datetime import datetime, timezone, timedelta
 
 log = logging.getLogger("antinuke.giveaway")
 
-GIVEAWAY_EMOJI = "🎉"
+GIVEAWAY_EMOJI = ""
 
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
@@ -66,7 +66,7 @@ def _pick_winner(participants: list[int], bonuses: dict) -> int | None:
 
 def _build_giveaway_embed(prize: str, end_time: datetime, ended: bool = False, winner_id: int = None, participants: int = 0) -> discord.Embed:
     embed = discord.Embed(color=0x2b2d31)
-    embed.title = f"🎉 {prize}"
+    embed.title = f"{prize}"
     if ended:
         embed.description = f"**Ganador:** <@{winner_id}>" if winner_id else "No hubo participantes."
         embed.set_footer(text="Giveaway terminado")
@@ -96,7 +96,7 @@ class JoinGiveawayView(discord.ui.View):
         self.guild_id = guild_id
         self.message_id = message_id
 
-    @discord.ui.button(label="🎉 Participar", style=discord.ButtonStyle.primary, custom_id="giveaway_join")
+    @discord.ui.button(label="Participar", style=discord.ButtonStyle.primary, custom_id="giveaway_join")
     async def join(self, interaction: discord.Interaction, button: discord.ui.Button):
         giveaways = _get_giveaways(self.guild_id)
         data = giveaways.get(str(self.message_id))
@@ -109,7 +109,7 @@ class JoinGiveawayView(discord.ui.View):
             msg = "Saliste del giveaway."
         else:
             participants.append(uid)
-            msg = "¡Te uniste al giveaway! 🎉"
+            msg = "¡Te uniste al giveaway!"
         data["participants"] = participants
         giveaways[str(self.message_id)] = data
         _save_giveaways(self.guild_id, giveaways)
@@ -176,7 +176,7 @@ class Giveaway(commands.Cog):
         await message.edit(embed=embed, view=None)
 
         if winner_id:
-            await channel.send(f"🎉 ¡Felicidades <@{winner_id}>! Ganaste **{data['prize']}**.")
+            await channel.send(f"¡Felicidades <@{winner_id}>! Ganaste **{data['prize']}**.")
         else:
             await channel.send("No hubo participantes suficientes para el giveaway.")
 
@@ -260,7 +260,7 @@ class Giveaway(commands.Cog):
         winner_id = _pick_winner(participants, bonuses)
 
         if winner_id:
-            await ctx.send(f"🎉 Nuevo ganador: <@{winner_id}>! Felicidades por **{data['prize']}**.")
+            await ctx.send(f"Nuevo ganador: <@{winner_id}>! Felicidades por **{data['prize']}**.")
         else:
             await ctx.send(embed=discord.Embed(
                 description="No hay participantes para rerollear.",
