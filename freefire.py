@@ -1,7 +1,7 @@
 """
 freefire.py — Búsqueda de jugadores de Free Fire por UID.
 
-⚠️ Usa una API NO OFICIAL de comunidad (developers.freefirecommunity.com),
+Usa una API NO OFICIAL de comunidad (developers.freefirecommunity.com),
 sin ninguna relación con Garena. Puede fallar o dejar de funcionar sin aviso.
 
 Requiere la variable de entorno FREEFIRE_API_KEY (gratis en
@@ -118,8 +118,8 @@ class FreeFire(commands.Cog):
         banned = data.get("is_banned") or data.get("banned")
         embed = discord.Embed(
             title=f"Estado de la cuenta — UID {uid}",
-            description="🔴 Esta cuenta está **baneada** (o fue reportada/suspendida por hacks)." if banned
-                        else "🟢 Esta cuenta **no** tiene baneos ni reportes activos.",
+            description="Esta cuenta está **baneada** (o fue reportada/suspendida por hacks)." if banned
+                        else "Esta cuenta **no** tiene baneos ni reportes activos.",
             color=0xed4245 if banned else 0x57f287,
         )
 
