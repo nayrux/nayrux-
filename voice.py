@@ -2,7 +2,7 @@
 voice.py — Sistema de voice channels temporales (Join to Create) con panel de control.
 
 Setup:
-  ,voiceset setup <categoria>   — crea el canal "➕ Join to Create" en esa categoría
+  ,voiceset setup <categoria>   — crea el canal "Join to Create" en esa categoría
   ,voiceset hub <#canal_voz>    — usa un canal de voz ya existente como hub
   ,voiceset off                — desactiva el sistema
 
@@ -56,7 +56,7 @@ ACTIVITIES = {
 
 def _build_panel_embed(guild: discord.Guild) -> discord.Embed:
     embed = discord.Embed(
-        title="🎙️ Panel de Voz",
+        title="Panel de Voz",
         description="Usa los botones de abajo para controlar tu canal de voz.",
         color=0x2b2d31,
     )
@@ -272,7 +272,7 @@ class ActivitySelect(discord.ui.Select):
                 target_application_id=app_id,
                 reason=f"Actividad iniciada por {interaction.user}",
             )
-            await interaction.response.send_message(f"🕹️ **{self.values[0]}** iniciada: {invite.url}", ephemeral=True)
+            await interaction.response.send_message(f"**{self.values[0]}** iniciada: {invite.url}", ephemeral=True)
         except discord.HTTPException as e:
             await interaction.response.send_message(f"No se pudo iniciar la actividad: {e}", ephemeral=True)
 
@@ -360,7 +360,7 @@ class Voice(commands.Cog):
             category = await ctx.guild.create_category(category_name, reason=f"Voice setup por {ctx.author}")
 
         hub = await ctx.guild.create_voice_channel(
-            "➕ Join to Create",
+            "Join to Create",
             category=category,
             reason=f"Voice hub creado por {ctx.author}",
         )
@@ -422,7 +422,7 @@ class Voice(commands.Cog):
         if not channel:
             return
         await channel.set_permissions(ctx.guild.default_role, connect=False)
-        await ctx.send(embed=discord.Embed(description="Canal bloqueado 🔒", color=0x57f287))
+        await ctx.send(embed=discord.Embed(description="Canal bloqueado", color=0x57f287))
 
     @voice.command(name="unlock")
     async def voice_unlock(self, ctx: commands.Context):
@@ -430,7 +430,7 @@ class Voice(commands.Cog):
         if not channel:
             return
         await channel.set_permissions(ctx.guild.default_role, connect=True)
-        await ctx.send(embed=discord.Embed(description="Canal desbloqueado 🔓", color=0x57f287))
+        await ctx.send(embed=discord.Embed(description="Canal desbloqueado", color=0x57f287))
 
     @voice.command(name="hide")
     async def voice_hide(self, ctx: commands.Context):
@@ -438,7 +438,7 @@ class Voice(commands.Cog):
         if not channel:
             return
         await channel.set_permissions(ctx.guild.default_role, view_channel=False)
-        await ctx.send(embed=discord.Embed(description="Canal oculto 🙈", color=0x57f287))
+        await ctx.send(embed=discord.Embed(description="Canal oculto", color=0x57f287))
 
     @voice.command(name="unhide")
     async def voice_unhide(self, ctx: commands.Context):
@@ -446,7 +446,7 @@ class Voice(commands.Cog):
         if not channel:
             return
         await channel.set_permissions(ctx.guild.default_role, view_channel=True)
-        await ctx.send(embed=discord.Embed(description="Canal visible 👁️", color=0x57f287))
+        await ctx.send(embed=discord.Embed(description="Canal visible", color=0x57f287))
 
     @voice.command(name="rename")
     async def voice_rename(self, ctx: commands.Context, *, name: str):
@@ -493,7 +493,7 @@ class Voice(commands.Cog):
         temp[str(channel.id)] = ctx.author.id
         _save_temp_channels(ctx.guild.id, temp)
         await channel.set_permissions(ctx.author, manage_channels=True, move_members=True, mute_members=True)
-        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ahora es el dueño de este canal 👑", color=0x57f287))
+        await ctx.send(embed=discord.Embed(description=f"{ctx.author.mention} ahora es el dueño de este canal", color=0x57f287))
 
 
 async def setup(bot: commands.Bot):
