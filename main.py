@@ -13,15 +13,18 @@ logging.basicConfig(
 )
 log = logging.getLogger("antinuke")
 
+
 class WebhookContext(commands.Context):
     """Context que reenvía ctx.send() a través del webhook del bot.
     En DMs no hay webhook posible, así que ahí se manda normal."""
+
     async def send(self, content=None, **kwargs):
         if self.guild is None:
             return await super().send(content, **kwargs)
         if content is not None:
             kwargs["content"] = content
         return await send_via_webhook(self.channel, **kwargs)
+
 
 class AntiNukeBot(commands.Bot):
     def __init__(self):
@@ -34,7 +37,7 @@ class AntiNukeBot(commands.Bot):
             owner_ids=self._load_owners(),
         )
         self.db = db
-        self.status_index = 0
+        self._status_index = 0
 
     def _load_owners(self):
         owners = os.getenv("OWNER_IDS", "")
@@ -88,6 +91,7 @@ class AntiNukeBot(commands.Bot):
     async def on_message(self, message):
         if message.author.bot:
             return
+
         if message.guild and message.content.strip() in (
             f"<@{self.user.id}>", f"<@!{self.user.id}>"
         ):
@@ -100,14 +104,34 @@ class AntiNukeBot(commands.Bot):
             )
             if message.guild.icon:
                 embed.set_thumbnail(url=message.guild.icon.url)
-            await message.channel.send(embed=embed)
+            await message.channel.send(embed=embed)  # respuesta normal, sin webhook
             return
+
         await self.process_commands(message)
 
     async def on_ready(self):
         log.info(f"Logged in as {self.user} ({self.user.id})")
         if not self.rotate_status.is_running():
             self.rotate_status.start()
+
+    @tasks.loop(seconds=20)
+    async def rotate_status(self):
+        statuses = [
+            (discord.ActivityType.watching, ",help | nayrux.com"),
+            (discord.ActivityType.watching, f"{len(self.guilds)} servidores"),
+            (discord.ActivityType.playing, ",help"),
+            (discord.ActivityType.competing, "seguridad de servidores"),
+        ]
+        activity_type, name = statuses[self._status_index % len(statuses)]
+        self._status_index += 1
+        await self.change_presence(
+            status=discord.Status.dnd,
+            activity=discord.Activity(type=activity_type, name=name),
+        )
+
+    @rotate_status.before_loop
+    async def before_rotate_status(self):
+        await self.wait_until_ready()
 
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.CommandNotFound):
@@ -134,42 +158,17 @@ class AntiNukeBot(commands.Bot):
                 color=0xed4245,
             ))
 
-    @tasks.loop(minutes=5)
-    async def rotate_status(self):
-        statuses = [
-            discord.Activity(
-                type=discord.ActivityType.watching,
-                name=f"{len(self.guilds)} servers | ,help"
-            ),
-            discord.Activity(
-                type=discord.CustomActivity,
-                name="Nayrux Bot"
-            ),
-            discord.Activity(
-                type=discord.ActivityType.playing,
-                name="Ready nayrux"
-            ),
-            discord.Activity(
-                type=discord.ActivityType.watching,
-                name="over the server"
-            ),
-        ]
-        
-        activity = statuses[self.status_index]
-        await self.change_presence(
-            status=discord.Status.dnd,
-            activity=activity
-        )
-        self.status_index = (self.status_index + 1) % len(statuses)
 
 async def main():
     token = os.getenv("TOKEN")
     if not token:
         log.critical("TOKEN environment variable not set.")
         return
+
     bot = AntiNukeBot()
     async with bot:
         await bot.start(token)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
