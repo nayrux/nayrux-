@@ -20,8 +20,13 @@ from datetime import datetime, timezone, timedelta
 import logging
 from config import db
 from logger import send_log
+from settings import MODULES
 
 log = logging.getLogger("antinuke.engine")
+
+# Mapa inverso: clave interna del toggle (ej. "anti_webhook") -> clave corta
+# usada por el panel de configuración y por settings.py (ej. "webhook").
+_TOGGLE_TO_SHORT: dict[str, str] = {v[0]: k for k, v in MODULES.items() if v[0]}
 
 
 # ── In-memory rate-limit buckets ──────────────────────────────────────────────
@@ -70,11 +75,58 @@ def invalidate_config_cache(guild_id: int):
 
 # ── Whitelist / rate-limit helpers ────────────────────────────────────────────
 
-def _is_whitelisted(guild_id: int, user_id: int, bot_owner_ids: set) -> bool:
+def _short_module_key(toggle_key: str | None) -> str | None:
+    """Convierte la clave interna del toggle (ej. 'anti_webhook') a la clave corta
+    que usa el panel de configuración y settings.py (ej. 'webhook')."""
+    if not toggle_key:
+        return None
+    return _TOGGLE_TO_SHORT.get(toggle_key, toggle_key)
+
+
+def _module_settings(config: dict, module_key: str | None) -> dict:
+    """Configuración específica de un módulo (punishment/log_channel/whitelist propios).
+    Si el módulo no tiene nada configurado, devuelve {} y todo cae de vuelta a lo global."""
+    if not module_key:
+        return {}
+    return config.get("module_settings", {}).get(module_key, {})
+
+
+def _is_whitelisted(
+    guild_id: int,
+    user_id: int,
+    bot_owner_ids: set,
+    module_key: str | None = None,
+    member: discord.Member | None = None,
+) -> bool:
     if user_id in bot_owner_ids:
         return True
     config = _get_config(guild_id)
-    return user_id in config.get("whitelist", [])
+    if user_id in config.get("whitelist", []):
+        return True
+
+    mod_wl = _module_settings(config, module_key).get("whitelist", {})
+    if user_id in mod_wl.get("users", []):
+        return True
+    if member is not None and mod_wl.get("roles"):
+        role_ids = {r.id for r in member.roles}
+        if role_ids & set(mod_wl.get("roles", [])):
+            return True
+    return False
+
+
+def _resolve_punishment(config: dict, module_key: str | None) -> str:
+    """Castigo a aplicar: el propio del módulo si está configurado, si no el global."""
+    mod_cfg = _module_settings(config, module_key)
+    return mod_cfg.get("punishment") or config.get("antinuke", {}).get("punishment", "ban")
+
+
+def _resolve_module_log_channel(guild: discord.Guild, config: dict, module_key: str | None):
+    """Canal de logs propio del módulo, si tiene uno configurado. None si no."""
+    mod_cfg = _module_settings(config, module_key)
+    channel_id = mod_cfg.get("log_channel")
+    if not channel_id:
+        return None
+    return guild.get_channel(int(channel_id))
 
 
 def _check_rate(guild_id: int, user_id: int, action: str, threshold: int, window: float) -> bool:
@@ -258,7 +310,10 @@ async def _handle_event(
         return
     if executor.id == bot.user.id:
         return
-    if _is_whitelisted(guild.id, executor.id, bot.owner_ids):
+
+    short_key = _short_module_key(module_key)
+
+    if _is_whitelisted(guild.id, executor.id, bot.owner_ids, module_key=short_key, member=executor):
         return
     if executor.top_role >= guild.me.top_role:
         return
@@ -278,7 +333,8 @@ async def _handle_event(
     if not hit:
         return
 
-    punishment = an.get("punishment", "ban")
+    punishment = _resolve_punishment(config, short_key)
+    module_log_channel = _resolve_module_log_channel(guild, config, short_key)
     nuke_detected_at = datetime.now(timezone.utc)
 
     # Import here to avoid circular import (backup imports nothing from antinuke)
@@ -301,6 +357,7 @@ async def _handle_event(
             module=module_label,
             category=category,
             extra_fields=extra_fields,
+            channel_override=module_log_channel,
         )),
         asyncio.create_task(_auto_unban(guild, nuke_detected_at)),
     ]
@@ -476,24 +533,26 @@ class AntiNuke(commands.Cog):
         # Anti-everyone mention
         if an.get("anti_everyone_mention", True):
             if message.mention_everyone:
-                if not _is_whitelisted(guild.id, message.author.id, self.bot.owner_ids):
-                    executor = guild.get_member(message.author.id)
-                    if executor:
-                        asyncio.create_task(_punish(guild, executor, an.get("punishment", "ban")))
-                        asyncio.create_task(send_log(
-                            guild,
-                            action=an.get("punishment", "ban"),
-                            target=executor,
-                            moderator=guild.me,
-                            reason="Usó una mención @everyone / @here",
-                            module="Anti-Mención Everyone",
-                            category="messages",
-                        ))
-                        try:
-                            await message.delete()
-                        except Exception:
-                            pass
-                        return
+                executor = guild.get_member(message.author.id)
+                if executor and not _is_whitelisted(guild.id, executor.id, self.bot.owner_ids, module_key="everyone", member=executor):
+                    config_here = _get_config(guild.id)
+                    punishment_here = _resolve_punishment(config_here, "everyone")
+                    asyncio.create_task(_punish(guild, executor, punishment_here))
+                    asyncio.create_task(send_log(
+                        guild,
+                        action=punishment_here,
+                        target=executor,
+                        moderator=guild.me,
+                        reason="Usó una mención @everyone / @here",
+                        module="Anti-Mención Everyone",
+                        category="messages",
+                        channel_override=_resolve_module_log_channel(guild, config_here, "everyone"),
+                    ))
+                    try:
+                        await message.delete()
+                    except Exception:
+                        pass
+                    return
 
         # Mass mention threshold
         if an.get("anti_mention", True):
@@ -506,19 +565,22 @@ class AntiNuke(commands.Cog):
                 _check_rate(guild.id, message.author.id, "mention", 1, window)
 
             hit = _check_rate(guild.id, message.author.id, "mention_check", threshold, window)
-            if hit and not _is_whitelisted(guild.id, message.author.id, self.bot.owner_ids):
-                executor = guild.get_member(message.author.id)
-                if executor and executor.top_role < guild.me.top_role:
-                    asyncio.create_task(_punish(guild, executor, an.get("punishment", "ban")))
+            executor = guild.get_member(message.author.id)
+            if hit and executor and not _is_whitelisted(guild.id, executor.id, self.bot.owner_ids, module_key="mention", member=executor):
+                if executor.top_role < guild.me.top_role:
+                    config_here = _get_config(guild.id)
+                    punishment_here = _resolve_punishment(config_here, "mention")
+                    asyncio.create_task(_punish(guild, executor, punishment_here))
                     asyncio.create_task(send_log(
                         guild,
-                        action=an.get("punishment", "ban"),
+                        action=punishment_here,
                         target=executor,
                         moderator=guild.me,
                         reason=f"Spam de menciones masivas ({mentions} menciones)",
                         module="Anti-Spam de Menciones",
                         category="messages",
                         extra_fields=[("Menciones", str(mentions), True)],
+                        channel_override=_resolve_module_log_channel(guild, config_here, "mention"),
                     ))
                     try:
                         await message.delete()
@@ -538,18 +600,20 @@ class AntiNuke(commands.Cog):
 
         if member.bot and an.get("anti_bot_add", True):
             executor = await _get_executor_with_retry(guild, discord.AuditLogAction.bot_add)
-            if executor and not _is_whitelisted(guild.id, executor.id, self.bot.owner_ids):
+            if executor and not _is_whitelisted(guild.id, executor.id, self.bot.owner_ids, module_key="botadd", member=executor):
+                punishment_here = _resolve_punishment(config, "botadd")
                 asyncio.create_task(guild.kick(member, reason="AntiNuke: unauthorized bot add"))
-                asyncio.create_task(_punish(guild, executor, an.get("punishment", "ban")))
+                asyncio.create_task(_punish(guild, executor, punishment_here))
                 asyncio.create_task(send_log(
                     guild,
-                    action=an.get("punishment", "ban"),
+                    action=punishment_here,
                     target=executor,
                     moderator=guild.me,
                     reason="Bot agregado sin autorización al servidor",
                     module="Anti-Bot Add",
                     category="members",
                     extra_fields=[("Bot Agregado", f"`{member}` (`{member.id}`)", False)],
+                    channel_override=_resolve_module_log_channel(guild, config, "botadd"),
                 ))
 
         # Account age check
@@ -585,7 +649,7 @@ class AntiNuke(commands.Cog):
         if not an.get("enabled", False) or not an.get("anti_server_update", True):
             return
         executor = await _get_executor_with_retry(guild, discord.AuditLogAction.guild_update)
-        if executor is None or _is_whitelisted(guild.id, executor.id, self.bot.owner_ids):
+        if executor is None or _is_whitelisted(guild.id, executor.id, self.bot.owner_ids, module_key="serverupdate", member=executor):
             return
         if executor.id == self.bot.user.id:
             return
@@ -598,16 +662,18 @@ class AntiNuke(commands.Cog):
             changes.append(f"Vanity: `{before.vanity_url_code}` → `{after.vanity_url_code}`")
         if not changes:
             return
-        asyncio.create_task(_punish(guild, executor, an.get("punishment", "ban")))
+        punishment_here = _resolve_punishment(config, "serverupdate")
+        asyncio.create_task(_punish(guild, executor, punishment_here))
         asyncio.create_task(send_log(
             guild,
-            action=an.get("punishment", "ban"),
+            action=punishment_here,
             target=executor,
             moderator=guild.me,
             reason="Actualización no autorizada del servidor",
             module="Anti-Actualización del Servidor",
             category="mod",
             extra_fields=[("Cambios", "\n".join(changes), False)],
+            channel_override=_resolve_module_log_channel(guild, config, "serverupdate"),
         ))
 
     # ── ANTI-PRUNE ────────────────────────────────────────────────────────────
@@ -626,16 +692,18 @@ class AntiNuke(commands.Cog):
         if not an.get("enabled", False) or not an.get("anti_prune", True):
             return
         executor = await _get_executor_with_retry(guild, discord.AuditLogAction.member_prune)
-        if executor and not _is_whitelisted(guild.id, executor.id, self.bot.owner_ids):
-            asyncio.create_task(_punish(guild, executor, an.get("punishment", "ban")))
+        if executor and not _is_whitelisted(guild.id, executor.id, self.bot.owner_ids, module_key="prune", member=executor):
+            punishment_here = _resolve_punishment(config, "prune")
+            asyncio.create_task(_punish(guild, executor, punishment_here))
             asyncio.create_task(send_log(
                 guild,
-                action=an.get("punishment", "ban"),
+                action=punishment_here,
                 target=executor,
                 moderator=guild.me,
                 reason="Expulsión masiva (prune) no autorizada",
                 module="Anti-Prune",
                 category="members",
+                channel_override=_resolve_module_log_channel(guild, config, "prune"),
             ))
 
     # ── ANTI-EMOJI DELETE ─────────────────────────────────────────────────────
@@ -667,7 +735,7 @@ class AntiNuke(commands.Cog):
         guild = after.guild
         config = _get_config(guild.id)
         an = config.get("antinuke", {})
-        if not an.get("enabled", False):
+        if not an.get("enabled", False) or not an.get("anti_role_perm", True):
             return
         gained = []
         for perm_flag in ["administrator", "ban_members", "manage_guild", "manage_roles", "manage_channels", "kick_members"]:
@@ -676,12 +744,13 @@ class AntiNuke(commands.Cog):
         if not gained:
             return
         executor = await _get_executor_with_retry(guild, discord.AuditLogAction.role_update)
-        if executor is None or _is_whitelisted(guild.id, executor.id, self.bot.owner_ids):
+        if executor is None or _is_whitelisted(guild.id, executor.id, self.bot.owner_ids, module_key="roleperm", member=executor):
             return
-        asyncio.create_task(_punish(guild, executor, an.get("punishment", "ban")))
+        punishment_here = _resolve_punishment(config, "roleperm")
+        asyncio.create_task(_punish(guild, executor, punishment_here))
         asyncio.create_task(send_log(
             guild,
-            action=an.get("punishment", "ban"),
+            action=punishment_here,
             target=executor,
             moderator=guild.me,
             reason="Permisos peligrosos otorgados a un rol",
@@ -691,6 +760,7 @@ class AntiNuke(commands.Cog):
                 ("Rol", f"`{after.name}`", True),
                 ("Permisos Otorgados", ", ".join(f"`{p}`" for p in gained), False),
             ],
+            channel_override=_resolve_module_log_channel(guild, config, "roleperm"),
         ))
 
 
