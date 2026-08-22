@@ -67,13 +67,17 @@ async def send_log(
     category: str = "mod",
     extra_fields: list[tuple] | None = None,
     color: int | None = None,
+    channel_override: discord.TextChannel | None = None,
 ):
     """
     Envía un embed de log al canal correspondiente a la categoría indicada
     (mod, channels, roles, emojis, members, voice, invites, messages, jail).
+    Si se pasa channel_override, se usa ese canal en vez de resolver por categoría
+    (usado por el panel de configuración por módulo, cuando un módulo tiene su
+    propio canal de logs configurado).
     """
     config = db.get_guild(guild.id)
-    channel = _resolve_log_channel(guild, config, category)
+    channel = channel_override or _resolve_log_channel(guild, config, category)
     if not channel:
         return
 
