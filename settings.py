@@ -55,6 +55,7 @@ MODULES = {
     "everyone": ("anti_everyone_mention", None, None),
     "serverupdate": ("anti_server_update", None, None),
     "prune": ("anti_prune", None, None),
+    "roleperm": ("anti_role_perm", None, None),
 }
 
 PUNISHMENT_CHOICES = ("ban", "kick", "strip", "mute")
@@ -333,14 +334,20 @@ class Settings(commands.Cog):
 
     @antinuke.command(name="module")
     @is_manager()
-    async def antinuke_module(self, ctx, module: str, state: str):
-        """Toggle a specific module on or off."""
+    async def antinuke_module(self, ctx, module: str, state: str = None):
+        """Abre el panel de configuración de un módulo, o lo activa/desactiva directo con on/off."""
         module = module.lower()
         if module not in MODULES:
             return await ctx.send(embed=build_embed(
                 ctx.guild,
                 f"Módulo desconocido `{module}`. Disponibles: {', '.join(f'`{m}`' for m in MODULES)}"
             ))
+
+        if state is None:
+            from module_panel import build_module_embed, ModuleConfigView
+            embed = build_module_embed(self.bot, ctx.guild, module)
+            view = ModuleConfigView(self.bot, module)
+            return await ctx.send(embed=embed, view=view)
 
         state = state.lower()
         if state not in ("on", "off", "enable", "disable", "true", "false", "1", "0"):
