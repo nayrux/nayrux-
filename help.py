@@ -21,6 +21,7 @@ CATEGORIES = {
                 ",antinuke disable",
                 ",antinuke status",
                 ",antinuke punishment <ban|kick|strip|mute>",
+                ",antinuke module <nombre>",
                 ",antinuke module <nombre> <on|off>",
                 ",antinuke threshold <módulo> <n>",
                 ",antinuke window <módulo> <segundos>",
@@ -30,8 +31,8 @@ CATEGORIES = {
             ], None),
             ("Módulos", [
                 "ban", "kick", "channeldelete", "channelcreate", "roledelete", "rolecreate",
-                "webhook", "mention", "emojidelete", "botadd", "everyone", "serverupdate", "prune",
-            ], "Usa estos nombres con `,antinuke module <nombre> <on|off>`."),
+                "webhook", "mention", "emojidelete", "botadd", "everyone", "serverupdate", "prune", "roleperm",
+            ], "Usa `,antinuke module <nombre>` (sin más nada) para abrir el panel de configuración de ese módulo: castigo, canal de logs y whitelist propios. O usa `,antinuke module <nombre> <on|off>` para activarlo/desactivarlo directo."),
         ],
     },
     "moderacion": {
@@ -295,13 +296,20 @@ class CategorySelect(discord.ui.Select):
 
 class HelpView(discord.ui.View):
     def __init__(self, bot: discord.Client):
-        super().__init__(timeout=180)
+        super().__init__(timeout=45)
+        self.bot = bot
+        self.message: discord.Message | None = None
         self.add_item(CategorySelect(bot))
         self.add_item(discord.ui.Button(label="Support Server", url=SUPPORT_SERVER_URL, style=discord.ButtonStyle.link))
 
     async def on_timeout(self):
-        for item in self.children:
-            item.disabled = True
+        if self.message is None:
+            return
+        e = discord.Embed(description="Menú de ayuda expirado.", color=0x2b2d31)
+        try:
+            await self.message.edit(embed=e, view=None)
+        except discord.HTTPException:
+            pass
 
 
 class Help(commands.Cog):
@@ -317,7 +325,7 @@ class Help(commands.Cog):
         if category is None:
             embed = _build_overview_embed(self.bot, prefix)
             view = HelpView(self.bot)
-            await ctx.send(embed=embed, view=view)
+            view.message = await ctx.send(embed=embed, view=view)
             return
 
         cat_key = category.lower().strip()
@@ -334,7 +342,7 @@ class Help(commands.Cog):
 
         embed = _build_category_embed(self.bot, cat_key)
         view = HelpView(self.bot)
-        await ctx.send(embed=embed, view=view)
+        view.message = await ctx.send(embed=embed, view=view)
 
 
 async def setup(bot):
