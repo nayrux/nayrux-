@@ -12,6 +12,55 @@ BRAND_ICON_URL = "https://i.pinimg.com/736x/78/ab/07/78ab072e66ef17fe638524e9a07
 # Cada categoría tiene "sections": lista de (subtítulo, [comandos], nota_opcional)
 
 CATEGORIES = {
+    "automation": {
+        "label": "Automation",
+        "description": "AutoRole, AutoReact y AutoGreet — automatiza roles, reacciones y bienvenidas.",
+        "sections": [
+            ("AutoRole", [
+                ",autorole setup <rol>",
+                ",autorole toggle",
+                ",autorole add <rol>",
+                ",autorole remove <rol>",
+                ",autorole addbot <rol>",
+                ",autorole removebot <rol>",
+                ",autorole list",
+                ",autorole clear",
+                ",autorole info",
+                ",autorole reset",
+            ], None),
+            ("AutoReact", [
+                ",autoreact add <trigger> <emoji>",
+                ",autoreact remove <trigger>",
+                ",autoreact list",
+                ",autoreact clear",
+                ",autoreact test <trigger>",
+            ], None),
+            ("AutoGreet", [
+                ",autogreet <#canal>",
+                ",autogreet off",
+                ",automsg <mensaje>",
+            ], "Variables: `{user}` `{username}` `{server}` `{membercount}`"),
+        ],
+    },
+    "roblox": {
+        "label": "Roblox",
+        "description": "Búsqueda de jugadores, avatares, presencia, grupos y juegos de Roblox.",
+        "sections": [
+            ("Roblox", [
+                ",roblox <usuario>",
+                ",roblox user <usuario>",
+                ",roblox value <usuario>",
+                ",roblox presence <usuario>",
+                ",roblox avatar <usuario>",
+                ",roblox wearing <usuario>",
+                ",roblox friends <usuario>",
+                ",roblox inventory <usuario>",
+                ",roblox group <usuario> <id_grupo>",
+                ",roblox groups <usuario>",
+                ",roblox game <place_id>",
+            ], "`,roblox value` usa un servicio no oficial (Rolimons) y puede fallar sin aviso."),
+        ],
+    },
     "antinuke": {
         "label": "AntiNuke",
         "description": "Motor de protección principal — activa, desactiva y ajusta cada módulo.",
@@ -231,6 +280,9 @@ CATEGORIES = {
 }
 
 ALIASES = {
+    "roblox": "roblox", "rblx": "roblox",
+    "autorole": "automation", "autoreact": "automation", "autogreet": "automation",
+    "automation": "automation", "automatizacion": "automation", "automatización": "automation",
     "mod": "moderacion", "moderation": "moderacion", "moderación": "moderacion",
     "jail": "moderacion", "lockdown": "moderacion", "unban": "moderacion",
     "modules": "antinuke", "módulos": "antinuke", "modulos": "antinuke",
