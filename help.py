@@ -42,22 +42,23 @@ CATEGORIES = {
             ], "Variables: `{user}` `{username}` `{server}` `{membercount}`"),
         ],
     },
-    "roblox": {
-        "label": "Roblox",
-        "description": "Búsqueda de jugadores, avatares, presencia, grupos y juegos de Roblox.",
+    "integrations": {
+        "label": "Integrations",
+        "description": "Integración y búsquedas de Roblox.",
         "sections": [
             ("Roblox", [
-                ",roblox <usuario>",
-                ",roblox user <usuario>",
-                ",roblox value <usuario>",
-                ",roblox presence <usuario>",
-                ",roblox avatar <usuario>",
-                ",roblox wearing <usuario>",
-                ",roblox friends <usuario>",
-                ",roblox inventory <usuario>",
-                ",roblox group <usuario> <id_grupo>",
-                ",roblox groups <usuario>",
-                ",roblox game <place_id>",
+                ",roblox",
+                ",rblx",
+                ",roblox user",
+                ",roblox value",
+                ",roblox presence",
+                ",roblox avatar",
+                ",roblox wearing",
+                ",roblox friends",
+                ",roblox inventory",
+                ",roblox group",
+                ",roblox groups",
+                ",roblox game",
             ], "`,roblox value` usa un servicio no oficial (Rolimons) y puede fallar sin aviso."),
         ],
     },
@@ -280,7 +281,7 @@ CATEGORIES = {
 }
 
 ALIASES = {
-    "roblox": "roblox", "rblx": "roblox",
+    "roblox": "integrations", "rblx": "integrations", "integrations": "integrations", "integraciones": "integrations",
     "autorole": "automation", "autoreact": "automation", "autogreet": "automation",
     "automation": "automation", "automatizacion": "automation", "automatización": "automation",
     "mod": "moderacion", "moderation": "moderacion", "moderación": "moderacion",
