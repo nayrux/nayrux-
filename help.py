@@ -166,14 +166,13 @@ CATEGORIES = {
                 ",setvc threshold <n>",
                 ",vcstats",
             ], None),
-            ("Voz Temporal", [
-                ",voiceset setup <categoría>",
-                ",voiceset hub <#canal_voz>",
-                ",voiceset panel",
-                ",voiceset off",
-                ",voice rename <nombre>",
-                ",voice limit <n>",
-            ], "Al crear tu canal, el bot manda un panel con botones para bloquear, ocultar, reclamar y más."),
+            ("VoiceMaster", [
+                ",voicemaster",
+                ",vm",
+                ",voicemaster setup",
+                ",voicemaster reset",
+                ",voicemaster panel",
+            ], "Lock/Unlock · Hide/Reveal · Rename · Limit · Kick · Claim"),
         ],
     },
     "bienvenidas": {
@@ -291,7 +290,7 @@ ALIASES = {
     "images": "imagenes", "imagedrop": "imagenes", "fotos": "imagenes",
     "log": "configuracion", "logs": "configuracion", "settings": "configuracion",
     "setup": "configuracion", "auto": "configuracion", "autoconfig": "configuracion", "autosetup": "configuracion",
-    "vctracker": "voz", "voicechannel": "voz", "voice": "voz", "voicemaster": "voz",
+    "vctracker": "voz", "voicechannel": "voz", "voice": "voz", "voicemaster": "voz", "vm": "voz",
     "welcome": "bienvenidas",
     "invites": "invitaciones", "invite": "invitaciones",
     "giveaway": "giveaways", "sorteos": "giveaways", "sorteo": "giveaways",
@@ -350,7 +349,7 @@ class CategorySelect(discord.ui.Select):
 
 class HelpView(discord.ui.View):
     def __init__(self, bot: discord.Client):
-        super().__init__(timeout=45)
+        super().__init__(timeout=120)
         self.bot = bot
         self.message: discord.Message | None = None
         self.add_item(CategorySelect(bot))
