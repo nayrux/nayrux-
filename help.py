@@ -169,6 +169,7 @@ CATEGORIES = {
             ("Voz Temporal", [
                 ",voiceset setup <categoría>",
                 ",voiceset hub <#canal_voz>",
+                ",voiceset panel",
                 ",voiceset off",
                 ",voice rename <nombre>",
                 ",voice limit <n>",
