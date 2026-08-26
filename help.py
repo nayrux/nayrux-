@@ -256,17 +256,6 @@ CATEGORIES = {
             ], "Sintaxis: `{embed}$v{title: ...}$v{description: ...}$v{color: #hex}$v{field: nombre && valor && inline}`\nVariables: `{user.mention}` `{user.tag}` `{guild.name}` `{guild.count}` `{channel.mention}`"),
         ],
     },
-    "freefire": {
-        "label": "Free Fire",
-        "description": "Búsqueda de jugadores de Free Fire por UID (API no oficial de comunidad).",
-        "sections": [
-            ("Free Fire", [
-                ",ffinfo <uid> [region]",
-                ",ffstats <uid> [region]",
-                ",ffban <uid>",
-            ], None),
-        ],
-    },
     "backup": {
         "label": "Respaldo",
         "description": "Copias de seguridad del servidor para restaurar canales y roles tras un ataque.",
