@@ -26,6 +26,7 @@ Panel (botones) + comandos de texto equivalentes:
 
 import discord
 from discord.ext import commands
+from discord.http import Route
 from config import db
 import logging
 from webhook_utils import send_via_webhook
@@ -37,26 +38,22 @@ log = logging.getLogger("antinuke.voice")
 # bot (Developer Portal → tu App → Emojis), solo reemplaza cada valor de aquí
 # por el formato "<:nombre:id_del_emoji>" y el panel los usa automáticamente.
 EMOJI = {
-    "lock": "<:lock:1533702526979936336>",
-    "unlock": "<:unlock:1533702560366592090>",
-    "hide": "<:hide:1533702475759091872>",
-    "reveal": "<:reveal:1533702543991902209>",
-    "activity": "<:activity:1533702413314166876>",
-    "increase": "<:increase:1533702491273826334>",
-    "decrease": "<:decrease:1533702441160147024>",
-    "disconnect": "<:disconnect:1533702461968351313>",
-    "claim": "<:claim:1533702427973386302>",
-    "info": "<:info:1533702510974337065>",
+    "lock": "<:lock:1541666323044630618>",
+    "unlock": "<:unlock:1541666324256784544>",
+    "hide": "<:nover:1541666320104427590>",
+    "reveal": "<:ver:1541666321610313788>",
+    "activity": "<:pantalla:1541666318984552548>",
+    "increase": "<:mas:1541666316581208134>",
+    "decrease": "<:menos:1541666317583523840>",
+    "disconnect": "<:martillo:1541666314081407047>",
+    "claim": "<:microfono:1541666311455907840>",
+    "info": "<:notas:1541666315381641216>",
 }
 
-# Actividades embebidas de Discord disponibles para el botón "Iniciar actividad"
-# (IDs públicos oficiales de aplicaciones de Discord)
-ACTIVITIES = {
-    "Watch Together": 880218394199220334,
-    "Poker Night": 755827207812677713,
-    "Chess in the Park": 832012774040141894,
-    "Sketch Heads": 902271654783242291,
-}
+# TODO: reemplazar cuando subas el emoji del logo (montaña+banderín) y me des su ID:
+# BRAND_ICON_URL = "https://cdn.discordapp.com/emojis/<ID_DEL_EMOJI>.png"
+BRAND_ICON_URL = "https://i.pinimg.com/736x/78/ab/07/78ab072e66ef17fe638524e9a072cc74.jpg"
+
 
 
 def _build_panel_embed(guild: discord.Guild) -> discord.Embed:
@@ -71,18 +68,17 @@ def _build_panel_embed(guild: discord.Guild) -> discord.Embed:
             f"{EMOJI['lock']} — **Bloquear** el canal de voz\n"
             f"{EMOJI['unlock']} — **Desbloquear** el canal de voz\n"
             f"{EMOJI['hide']} — **Ocultar** el canal de voz\n"
-            f"{EMOJI['activity']} — **Iniciar** una actividad\n"
-            f"{EMOJI['increase']} — **Aumentar** el límite de usuarios\n"
+            f"{EMOJI['activity']} — **Establecer** el estado del canal\n"
+            f"{EMOJI['increase']} — **Cambiar** el límite de usuarios (subir)\n"
             f"{EMOJI['disconnect']} — **Desconectar** a un miembro\n"
             f"{EMOJI['claim']} — **Reclamar** el canal de voz\n"
             f"{EMOJI['reveal']} — **Revelar** el canal de voz\n"
             f"{EMOJI['info']} — **Ver** información del canal\n"
-            f"{EMOJI['decrease']} — **Disminuir** el límite de usuarios"
+            f"{EMOJI['decrease']} — **Cambiar** el límite de usuarios (bajar)"
         ),
         inline=False,
     )
-    if guild.icon:
-        embed.set_thumbnail(url=guild.icon.url)
+    embed.set_thumbnail(url=BRAND_ICON_URL)
     return embed
 
 
@@ -196,18 +192,14 @@ class VoicePanel(discord.ui.View):
         channel = await self._check(interaction)
         if not channel:
             return
-        await interaction.response.send_message(
-            "Elige una actividad para iniciar:", view=ActivitySelectView(channel), ephemeral=True
-        )
+        await interaction.response.send_modal(StatusModal(channel))
 
     @discord.ui.button(emoji=EMOJI["increase"], style=discord.ButtonStyle.secondary, custom_id="vc_increase", row=0)
     async def increase(self, interaction: discord.Interaction, button: discord.ui.Button):
         channel = await self._check(interaction)
         if not channel:
             return
-        new_limit = min((channel.user_limit or 0) + 1, 99)
-        await channel.edit(user_limit=new_limit)
-        await interaction.response.send_message(f"Límite subido a `{new_limit}` {EMOJI['increase']}", ephemeral=True)
+        await interaction.response.send_modal(LimitModal(channel))
 
     # ── Fila 2 ──────────────────────────────────────────────────────────────
 
@@ -270,36 +262,57 @@ class VoicePanel(discord.ui.View):
         channel = await self._check(interaction)
         if not channel:
             return
-        new_limit = max((channel.user_limit or 0) - 1, 0)
-        await channel.edit(user_limit=new_limit)
-        label = new_limit if new_limit else "sin límite"
-        await interaction.response.send_message(f"Límite bajado a `{label}` {EMOJI['decrease']}", ephemeral=True)
+        await interaction.response.send_modal(LimitModal(channel))
 
 
-class ActivitySelectView(discord.ui.View):
+class StatusModal(discord.ui.Modal, title="Estado del canal"):
     def __init__(self, channel: discord.VoiceChannel):
-        super().__init__(timeout=60)
-        self.add_item(ActivitySelect(channel))
-
-
-class ActivitySelect(discord.ui.Select):
-    def __init__(self, channel: discord.VoiceChannel):
-        options = [discord.SelectOption(label=name) for name in ACTIVITIES]
-        super().__init__(placeholder="Selecciona una actividad", options=options)
+        super().__init__()
         self.channel = channel
+        self.text_input = discord.ui.TextInput(
+            label="Texto del estado",
+            placeholder="Ej. Jugando Valorant, En pausa, Chill...",
+            required=False,
+            max_length=500,
+        )
+        self.add_item(self.text_input)
 
-    async def callback(self, interaction: discord.Interaction):
-        app_id = ACTIVITIES[self.values[0]]
+    async def on_submit(self, interaction: discord.Interaction):
+        text = self.text_input.value.strip()
         try:
-            invite = await self.channel.create_invite(
-                max_age=3600,
-                target_type=discord.InviteTarget.embedded_application,
-                target_application_id=app_id,
-                reason=f"Actividad iniciada por {interaction.user}",
+            await interaction.client.http.request(
+                Route("PATCH", "/channels/{channel_id}", channel_id=self.channel.id),
+                json={"status": text},
             )
-            await interaction.response.send_message(f"**{self.values[0]}** iniciada: {invite.url}", ephemeral=True)
         except discord.HTTPException as e:
-            await interaction.response.send_message(f"No se pudo iniciar la actividad: {e}", ephemeral=True)
+            return await interaction.response.send_message(f"No se pudo actualizar el estado: {e}", ephemeral=True)
+
+        if text:
+            await interaction.response.send_message(f"Estado del canal actualizado a: **{text}**", ephemeral=True)
+        else:
+            await interaction.response.send_message("Estado del canal borrado.", ephemeral=True)
+
+
+class LimitModal(discord.ui.Modal, title="Límite de usuarios"):
+    def __init__(self, channel: discord.VoiceChannel):
+        super().__init__()
+        self.channel = channel
+        self.number_input = discord.ui.TextInput(
+            label="Límite (0-99, 0 = sin límite)",
+            placeholder="Ej. 5",
+            required=True,
+            max_length=2,
+        )
+        self.add_item(self.number_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        raw = self.number_input.value.strip()
+        if not raw.isdigit():
+            return await interaction.response.send_message("Escribe solo un número.", ephemeral=True)
+        limit = max(0, min(int(raw), 99))
+        await self.channel.edit(user_limit=limit)
+        label = str(limit) if limit else "sin límite"
+        await interaction.response.send_message(f"Límite ajustado a `{label}`.", ephemeral=True)
 
 
 class KickSelectView(discord.ui.View):
