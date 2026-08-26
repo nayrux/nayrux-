@@ -50,9 +50,8 @@ EMOJI = {
     "info": "<:notas:1541666315381641216>",
 }
 
-# TODO: reemplazar cuando subas el emoji del logo (montaña+banderín) y me des su ID:
-# BRAND_ICON_URL = "https://cdn.discordapp.com/emojis/<ID_DEL_EMOJI>.png"
-BRAND_ICON_URL = "https://i.pinimg.com/736x/78/ab/07/78ab072e66ef17fe638524e9a072cc74.jpg"
+# Logo de marca (montaña+banderín), servido desde la CDN de emojis de Discord
+BRAND_ICON_URL = "https://cdn.discordapp.com/emojis/1542307782295036016.png"
 
 
 
