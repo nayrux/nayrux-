@@ -48,6 +48,8 @@ EMOJI = {
     "disconnect": "<:martillo:1542311934953662294>",
     "claim": "<:microfono:1542311970675884498>",
     "info": "<:notas:1542311984920630954>",
+    "check": "<:check:1542315458882179142>",
+    "x_": "<:x_:1542315470643003442>",
 }
 
 # Logo de marca (montaña+banderín), servido desde la CDN de emojis de Discord
