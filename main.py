@@ -82,7 +82,6 @@ class AntiNukeBot(commands.Bot):
             "activity_logs",
             "embeds",
             "autoresponder",
-            "freefire",
         ]
         for cog in cogs:
             try:
