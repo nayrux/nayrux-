@@ -59,7 +59,7 @@ class AutoRole(commands.Cog):
         except Exception as e:
             log.error(f"[{member.guild.name}] Error en autorole: {e}")
 
-    @commands.group(name="autorole", aliases=["ar"], invoke_without_command=True)
+    @commands.group(name="autorole", aliases=["arole"], invoke_without_command=True)
     @commands.has_permissions(manage_guild=True)
     async def autorole(self, ctx: commands.Context):
         await ctx.send(embed=discord.Embed(
