@@ -53,10 +53,9 @@ EMOJI = {
 # Logo de marca (montaña+banderín), servido desde la CDN de emojis de Discord
 BRAND_ICON_URL = "https://cdn.discordapp.com/emojis/1542311923461263391.png"
 
-# TODO: reemplazar cuando subas check.png y x.png y me des sus IDs, ej:
-# EMOJI_SUCCESS = "<:check:1542999999999999999>"
-EMOJI_SUCCESS = ""
-EMOJI_ERROR = ""
+# check.png / x.png subidos como emojis de la app:
+EMOJI_SUCCESS = "<:check:1542315458882179142>"
+EMOJI_ERROR = "<:x_:1542315470643003442>"
 
 
 def _success_embed(text: str) -> discord.Embed:
