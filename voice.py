@@ -38,20 +38,20 @@ log = logging.getLogger("antinuke.voice")
 # bot (Developer Portal → tu App → Emojis), solo reemplaza cada valor de aquí
 # por el formato "<:nombre:id_del_emoji>" y el panel los usa automáticamente.
 EMOJI = {
-    "lock": "<:lock:1542311910613983262>",
-    "unlock": "<:unlock:1542312045364610760>",
-    "hide": "<:nover:1542312009272659968>",
-    "reveal": "<:ver:1542312060976718501>",
-    "activity": "<:pantalla:1542312027983315034>",
-    "increase": "<:mas:1542311945682022756>",
-    "decrease": "<:menos:1542311955493298307>",
-    "disconnect": "<:martillo:1542311934953662294>",
-    "claim": "<:microfono:1542311970675884498>",
-    "info": "<:notas:1542311984920630954>",
+    "lock": "<:lock:1543043196144058451>",
+    "unlock": "<:unlock:1543043371197792276>",
+    "hide": "<:nover:1543043357276770397>",
+    "reveal": "<:ver:1543043394064883825>",
+    "activity": "<:pantalla:1543043420484935771>",
+    "increase": "<:mas:1543347172387594380>",
+    "decrease": "<:menos:1543043264058232842>",
+    "disconnect": "<:martillo:1543043225508388964>",
+    "claim": "<:microfono:1543043327480430662>",
+    "info": "<:notas:1543043341162250240>",
 }
 
 # Logo de marca (montaña+banderín), servido desde la CDN de emojis de Discord
-BRAND_ICON_URL = "https://cdn.discordapp.com/emojis/1542311923461263391.png"
+BRAND_ICON_URL = "https://cdn.discordapp.com/emojis/1543043214896922635.png"
 
 # check.png / x.png subidos como emojis de la app:
 EMOJI_SUCCESS = "<:check:1542315458882179142>"
