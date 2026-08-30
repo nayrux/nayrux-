@@ -68,6 +68,7 @@ async def send_log(
     extra_fields: list[tuple] | None = None,
     color: int | None = None,
     channel_override: discord.TextChannel | None = None,
+    punishment: str | None = None,
 ):
     """
     Envía un embed de log al canal correspondiente a la categoría indicada
@@ -75,6 +76,12 @@ async def send_log(
     Si se pasa channel_override, se usa ese canal en vez de resolver por categoría
     (usado por el panel de configuración por módulo, cuando un módulo tiene su
     propio canal de logs configurado).
+
+    punishment: el castigo REAL que se aplicó (ej. "ban", "kick"), solo para
+    eventos donde el antinuke de verdad actuó contra alguien. Si es None, el
+    log se arma en modo informativo (sin campo de "Sanción Aplicada") — para
+    actividad normal como mensajes editados, entradas/salidas de miembros,
+    actividad de voz, invitaciones, etc. donde nadie fue castigado.
     """
     config = db.get_guild(guild.id)
     channel = channel_override or _resolve_log_channel(guild, config, category)
@@ -82,14 +89,11 @@ async def send_log(
         return
 
     embed_cfg = config.get("log_embed", {})
-    footer_text = embed_cfg.get("footer_text", "Protección AntiNuke")
+    footer_text = embed_cfg.get("footer_text", "Protección AntiNuke" if punishment else "Registro de Actividad")
     show_thumbnail = embed_cfg.get("thumbnail", True)
 
     cat_emoji, cat_color, _ = LOG_CATEGORY_META.get(category, ("", 0x2b2d31, ""))
     embed_color = color or embed_cfg.get("color") or cat_color
-
-    punishment = config.get("antinuke", {}).get("punishment", "ban")
-    punishment_label = PUNISHMENT_LABELS.get(punishment, punishment.capitalize())
 
     now = datetime.now(timezone.utc)
     timestamp_str = f"<t:{int(now.timestamp())}:F>"
@@ -104,7 +108,7 @@ async def send_log(
 
     if target:
         embed.add_field(
-            name="Infractor",
+            name="Infractor" if punishment else "Usuario",
             value=f"{target.mention} `{target}` (`{target.id}`)",
             inline=False
         )
@@ -115,9 +119,14 @@ async def send_log(
             inline=False
         )
 
-    embed.add_field(name="Sanción Aplicada", value=f"`{punishment_label}`", inline=True)
-    embed.add_field(name="Módulo", value=f"`{module}`", inline=True)
-    embed.add_field(name="Detectado A Las", value=timestamp_str, inline=False)
+    if punishment:
+        punishment_label = PUNISHMENT_LABELS.get(punishment, punishment.capitalize())
+        embed.add_field(name="Sanción Aplicada", value=f"`{punishment_label}`", inline=True)
+        embed.add_field(name="Módulo", value=f"`{module}`", inline=True)
+        embed.add_field(name="Detectado A Las", value=timestamp_str, inline=False)
+    else:
+        embed.add_field(name="Registrado A Las", value=timestamp_str, inline=False)
+
     embed.add_field(name="Razón", value=f"```{reason}```", inline=False)
 
     if extra_fields:
