@@ -72,6 +72,8 @@ class AntiNukeBot(commands.Bot):
             "autorole",
             "autoreact",
             "roblox",
+            "info",
+            "music",
             "invites",
             "giveaway",
             "help",
