@@ -292,6 +292,77 @@ async def _auto_unban(guild: discord.Guild, nuke_detected_at: datetime, window: 
 
 # ── Central event handler ─────────────────────────────────────────────────────
 
+async def _try_instant_admin_revert(
+    guild: discord.Guild,
+    executor: discord.Member | None,
+    bot: commands.Bot,
+    module_key: str,
+    reason: str,
+    revert=None,
+    extra_fields: list | None = None,
+) -> bool:
+    """
+    Si quien ejecutó la acción tiene permiso de Administrator y NO está en
+    whitelist, revierte la acción al instante (si se le pasó cómo hacerlo)
+    y lo expulsa del servidor — sin esperar el umbral normal de detección
+    por volumen, porque tener Administrator ya es en sí una señal grave.
+
+    `revert` es un callable async sin argumentos que deshace la acción
+    (ej. desbanear, devolver un rol). Pasa None si esa acción no se puede
+    deshacer (como un kick).
+
+    Devuelve True si se manejó aquí (y por lo tanto el flujo normal de
+    _handle_event NO debe correr también), False si debe seguir normal.
+    """
+    if executor is None or executor.bot:
+        return False
+    if executor.id == bot.user.id:
+        return False
+    if not executor.guild_permissions.administrator:
+        return False
+    if _is_whitelisted(guild.id, executor.id, bot.owner_ids, module_key=module_key, member=executor):
+        return False
+
+    config = _get_config(guild.id)
+    an = config.get("antinuke", {})
+    if not an.get("enabled", False):
+        return False
+
+    reverted = False
+    if revert is not None:
+        try:
+            await revert()
+            reverted = True
+        except discord.HTTPException:
+            reverted = False
+
+    kicked = False
+    try:
+        await guild.kick(executor, reason="AntiNuke: acción no autorizada por Administrator sin whitelist")
+        kicked = True
+    except discord.HTTPException:
+        kicked = False
+
+    fields = list(extra_fields or [])
+    if revert is not None:
+        fields.append(("Reversión", "Completada" if reverted else "Falló (revisa permisos del bot)", True))
+    fields.append(("Expulsado", "Sí" if kicked else "No (el bot no tiene permisos suficientes)", True))
+
+    asyncio.create_task(send_log(
+        guild,
+        action="kick",
+        punishment="kick",
+        target=executor,
+        moderator=guild.me,
+        reason=reason,
+        module="Anti-Escalada (Administrator)",
+        category="mod",
+        extra_fields=fields,
+        channel_override=_resolve_module_log_channel(guild, config, module_key),
+    ))
+    return True
+
+
 async def _handle_event(
     guild: discord.Guild,
     executor: discord.Member | None,
@@ -351,6 +422,7 @@ async def _handle_event(
         asyncio.create_task(send_log(
             guild,
             action=punishment,
+            punishment=punishment,
             target=executor,
             moderator=guild.me,
             reason=reason,
@@ -408,6 +480,19 @@ class AntiNuke(commands.Cog):
         _ban_log[guild.id] = [(uid, ts) for uid, ts in _ban_log[guild.id] if ts >= cutoff]
 
         executor = await _get_executor_with_retry(guild, discord.AuditLogAction.ban)
+
+        async def _revert():
+            await guild.unban(user, reason="AntiNuke: reversión de baneo no autorizado")
+
+        handled = await _try_instant_admin_revert(
+            guild, executor, self.bot, "ban",
+            reason=f"Baneó a {user} sin autorización (tiene Administrator, no está en whitelist)",
+            revert=_revert,
+            extra_fields=[("Usuario Baneado", f"`{user}` (`{user.id}`)", False)],
+        )
+        if handled:
+            return
+
         await _handle_event(
             guild, executor, self.bot,
             "anti_ban", "ban", "ban_threshold", "ban_window",
@@ -425,6 +510,17 @@ class AntiNuke(commands.Cog):
         executor = await _get_executor_with_retry(guild, discord.AuditLogAction.kick)
         if executor is None:
             return
+
+        handled = await _try_instant_admin_revert(
+            guild, executor, self.bot, "kick",
+            reason=f"Expulsó a {member} sin autorización (tiene Administrator, no está en whitelist). "
+                   f"Nota: Discord no permite que el bot regrese a la persona al servidor automáticamente.",
+            revert=None,  # un kick no se puede deshacer — la persona ya salió del servidor
+            extra_fields=[("Usuario Expulsado", f"`{member}` (`{member.id}`)", False)],
+        )
+        if handled:
+            return
+
         await _handle_event(
             guild, executor, self.bot,
             "anti_kick", "kick", "kick_threshold", "kick_window",
@@ -432,6 +528,51 @@ class AntiNuke(commands.Cog):
             "Superó el límite de expulsiones permitidas",
             category="mod",
             extra_fields=[("Usuario Expulsado", f"`{member}` (`{member.id}`)", False)],
+        )
+
+    # ── ANTI-CAMBIO DE ROLES (dar/quitar rol a un miembro) ──────────────────────
+
+    @commands.Cog.listener()
+    async def on_member_update(self, before: discord.Member, after: discord.Member):
+        if before.roles == after.roles:
+            return
+        guild = after.guild
+        added = [r for r in after.roles if r not in before.roles]
+        removed = [r for r in before.roles if r not in after.roles]
+        if not added and not removed:
+            return
+
+        executor = await _get_executor_with_retry(guild, discord.AuditLogAction.member_role_update)
+        if executor is None or executor.id == self.bot.user.id:
+            return
+
+        async def _revert():
+            if added:
+                await after.remove_roles(*added, reason="AntiNuke: reversión de rol no autorizado")
+            if removed:
+                await after.add_roles(*removed, reason="AntiNuke: reversión de rol no autorizado")
+
+        role_fields = [
+            ("Roles Agregados", ", ".join(r.mention for r in added) or "Ninguno", True),
+            ("Roles Quitados", ", ".join(r.mention for r in removed) or "Ninguno", True),
+        ]
+
+        handled = await _try_instant_admin_revert(
+            guild, executor, self.bot, "roleadd",
+            reason=f"Modificó los roles de {after} sin autorización (tiene Administrator, no está en whitelist)",
+            revert=_revert,
+            extra_fields=role_fields,
+        )
+        if handled:
+            return
+
+        await _handle_event(
+            guild, executor, self.bot,
+            "anti_role_add", "role_update", "role_add_threshold", "role_add_window",
+            "Anti-Cambio de Roles",
+            "Superó el límite de cambios de roles permitidos",
+            category="roles",
+            extra_fields=role_fields,
         )
 
     # ── ANTI-CHANNEL DELETE ───────────────────────────────────────────────────
@@ -541,6 +682,7 @@ class AntiNuke(commands.Cog):
                     asyncio.create_task(send_log(
                         guild,
                         action=punishment_here,
+                        punishment=punishment_here,
                         target=executor,
                         moderator=guild.me,
                         reason="Usó una mención @everyone / @here",
@@ -574,6 +716,7 @@ class AntiNuke(commands.Cog):
                     asyncio.create_task(send_log(
                         guild,
                         action=punishment_here,
+                        punishment=punishment_here,
                         target=executor,
                         moderator=guild.me,
                         reason=f"Spam de menciones masivas ({mentions} menciones)",
@@ -607,6 +750,7 @@ class AntiNuke(commands.Cog):
                 asyncio.create_task(send_log(
                     guild,
                     action=punishment_here,
+                    punishment=punishment_here,
                     target=executor,
                     moderator=guild.me,
                     reason="Bot agregado sin autorización al servidor",
@@ -626,6 +770,7 @@ class AntiNuke(commands.Cog):
                     asyncio.create_task(send_log(
                         guild,
                         action="kick",
+                        punishment="kick",
                         target=member,
                         moderator=guild.me,
                         reason=f"Edad de cuenta por debajo del mínimo ({age}/{min_age} días)",
@@ -667,6 +812,7 @@ class AntiNuke(commands.Cog):
         asyncio.create_task(send_log(
             guild,
             action=punishment_here,
+            punishment=punishment_here,
             target=executor,
             moderator=guild.me,
             reason="Actualización no autorizada del servidor",
@@ -698,6 +844,7 @@ class AntiNuke(commands.Cog):
             asyncio.create_task(send_log(
                 guild,
                 action=punishment_here,
+                punishment=punishment_here,
                 target=executor,
                 moderator=guild.me,
                 reason="Expulsión masiva (prune) no autorizada",
@@ -751,6 +898,7 @@ class AntiNuke(commands.Cog):
         asyncio.create_task(send_log(
             guild,
             action=punishment_here,
+            punishment=punishment_here,
             target=executor,
             moderator=guild.me,
             reason="Permisos peligrosos otorgados a un rol",
