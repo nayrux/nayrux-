@@ -60,13 +60,17 @@ YTDL_OPTS = {
     },
 }
 
-# Si YouTube sigue bloqueando incluso con el truco de arriba, se puede pasar
-# un archivo de cookies exportado de un navegador real (ver instrucciones:
-# https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp).
-# Súbelo como archivo privado en Railway y pon su ruta en la variable de
-# entorno YOUTUBE_COOKIES_FILE — si no la configuras, esto simplemente no se usa.
-_cookies_path = os.getenv("YOUTUBE_COOKIES_FILE")
-if _cookies_path and os.path.isfile(_cookies_path):
+# Si YouTube sigue bloqueando incluso con el truco de arriba, hace falta pasar
+# cookies de una sesión real de YouTube. En vez de subir un archivo a Railway,
+# pega el CONTENIDO completo de tu cookies.txt en la variable de entorno
+# YOUTUBE_COOKIES (Railway sí permite variables de varias líneas) — el bot lo
+# escribe a un archivo local él solo al arrancar. Si no configuras la
+# variable, esto simplemente no se usa.
+_cookies_content = os.getenv("YOUTUBE_COOKIES")
+if _cookies_content:
+    _cookies_path = "/tmp/youtube_cookies.txt"
+    with open(_cookies_path, "w", encoding="utf-8") as _f:
+        _f.write(_cookies_content)
     YTDL_OPTS["cookiefile"] = _cookies_path
 
 FFMPEG_BEFORE_OPTS = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
