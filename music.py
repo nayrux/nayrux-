@@ -26,6 +26,7 @@ Comandos:
 import asyncio
 import functools
 import logging
+import os
 import random
 import re
 from dataclasses import dataclass, field
@@ -48,7 +49,25 @@ YTDL_OPTS = {
     "source_address": "0.0.0.0",
     "extract_flat": False,
     "skip_download": True,
+    # YouTube bloquea muchas IPs de servidores/nube con un check anti-bot.
+    # Pedirle a yt-dlp que finja ser el cliente de Android/iOS (en vez del
+    # cliente web normal) suele evitar ese bloqueo, porque esos clientes no
+    # piden la misma verificación.
+    "extractor_args": {
+        "youtube": {
+            "player_client": ["android", "ios", "web"],
+        }
+    },
 }
+
+# Si YouTube sigue bloqueando incluso con el truco de arriba, se puede pasar
+# un archivo de cookies exportado de un navegador real (ver instrucciones:
+# https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp).
+# Súbelo como archivo privado en Railway y pon su ruta en la variable de
+# entorno YOUTUBE_COOKIES_FILE — si no la configuras, esto simplemente no se usa.
+_cookies_path = os.getenv("YOUTUBE_COOKIES_FILE")
+if _cookies_path and os.path.isfile(_cookies_path):
+    YTDL_OPTS["cookiefile"] = _cookies_path
 
 FFMPEG_BEFORE_OPTS = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
 FFMPEG_OPTS = "-vn"
