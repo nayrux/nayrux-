@@ -55,10 +55,11 @@ YTDL_OPTS = {
     # piden la misma verificación.
     "extractor_args": {
         "youtube": {
-            # Con cookies ya autenticadas, el cliente "web" trae la lista de
-            # formatos más completa y confiable — se prioriza. "android" queda
-            # solo como respaldo si "web" llegara a fallar.
-            "player_client": ["web", "android"],
+            # YouTube está forzando el protocolo "SABR" en el cliente web, que
+            # bloquea los links de descarga directa (yt-dlp issue #12482).
+            # El cliente "tv" todavía entrega URLs usables sin pedir un token
+            # extra (PO Token) — se prioriza. Los demás quedan de respaldo.
+            "player_client": ["tv", "ios", "web_safari", "android"],
         }
     },
 }
