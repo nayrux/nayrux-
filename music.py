@@ -41,7 +41,7 @@ from voice import EMOJI_SUCCESS, EMOJI_ERROR
 log = logging.getLogger("antinuke.music")
 
 YTDL_OPTS = {
-    "format": "bestaudio/best",
+    "format": "bestaudio[ext=m4a]/bestaudio/best[acodec!=none]/best",
     "noplaylist": True,
     "quiet": True,
     "no_warnings": True,
@@ -55,7 +55,10 @@ YTDL_OPTS = {
     # piden la misma verificación.
     "extractor_args": {
         "youtube": {
-            "player_client": ["android", "ios", "web"],
+            # Con cookies ya autenticadas, el cliente "web" trae la lista de
+            # formatos más completa y confiable — se prioriza. "android" queda
+            # solo como respaldo si "web" llegara a fallar.
+            "player_client": ["web", "android"],
         }
     },
 }
