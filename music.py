@@ -86,6 +86,9 @@ if _cookies_content:
     with open(_cookies_path, "w", encoding="utf-8") as _f:
         _f.write(_cookies_content)
     YTDL_OPTS["cookiefile"] = _cookies_path
+    log.info(f"✔ YOUTUBE_COOKIES cargado ({len(_cookies_content)} caracteres) -> {_cookies_path}")
+else:
+    log.warning("✘ YOUTUBE_COOKIES no está configurado — yt-dlp irá sin cookies (más riesgo de bloqueo anti-bot).")
 
 FFMPEG_BEFORE_OPTS = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
 FFMPEG_OPTS = "-vn"
