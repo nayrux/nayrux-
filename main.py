@@ -56,12 +56,12 @@ class AntiNukeBot(commands.Bot):
         return await super().get_context(message, cls=cls)
 
     async def setup_hook(self):
-        import shutil
-        ffmpeg_path = shutil.which("ffmpeg")
-        if ffmpeg_path:
-            log.info(f"✔ ffmpeg encontrado en: {ffmpeg_path}")
-        else:
-            log.error("✘ ffmpeg NO está instalado / no está en el PATH — la música no va a funcionar.")
+        try:
+            import imageio_ffmpeg
+            ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
+            log.info(f"✔ ffmpeg (incluido) encontrado en: {ffmpeg_path}")
+        except Exception as e:
+            log.error(f"✘ No se pudo resolver ffmpeg (imageio-ffmpeg) — la música no va a funcionar: {e}")
 
         cogs = [
             "backup",
