@@ -56,6 +56,13 @@ class AntiNukeBot(commands.Bot):
         return await super().get_context(message, cls=cls)
 
     async def setup_hook(self):
+        import shutil
+        ffmpeg_path = shutil.which("ffmpeg")
+        if ffmpeg_path:
+            log.info(f"✔ ffmpeg encontrado en: {ffmpeg_path}")
+        else:
+            log.error("✘ ffmpeg NO está instalado / no está en el PATH — la música no va a funcionar.")
+
         cogs = [
             "backup",
             "antinuke",
