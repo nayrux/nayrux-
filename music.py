@@ -55,13 +55,12 @@ YTDL_OPTS = {
     # piden la misma verificación.
     "extractor_args": {
         "youtube": {
-            # YouTube está forzando el protocolo "SABR" en el cliente web, que
-            # bloquea los links de descarga directa (yt-dlp issue #12482).
-            # El cliente "tv" es, por ahora (agosto 2026), el que de forma más
-            # confiable sigue entregando un stream usable sin pedir un token
-            # extra — cae a un formato combinado video+audio (menor calidad,
-            # ~360p) pero funciona.
-            "player_client": ["tv"],
+            # Cuando se usan cookies, yt-dlp puede caer automáticamente en el
+            # cliente "tv_downgraded", que tiene un bug conocido ahora mismo
+            # (yt-dlp issue #17389, agosto 2026: "The page needs to be
+            # reloaded"). Los propios mantenedores recomiendan esta combinación
+            # específica cuando se usan cookies, en vez de forzar "tv" solo.
+            "player_client": ["default", "web_embedded"],
         }
     },
 }
