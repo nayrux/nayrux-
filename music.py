@@ -41,7 +41,7 @@ from voice import EMOJI_SUCCESS, EMOJI_ERROR
 log = logging.getLogger("antinuke.music")
 
 YTDL_OPTS = {
-    "format": "bestaudio[ext=m4a]/bestaudio/best[acodec!=none]/best",
+    "format": "bestvideo*+bestaudio/best",
     "noplaylist": True,
     "quiet": True,
     "no_warnings": True,
@@ -57,9 +57,11 @@ YTDL_OPTS = {
         "youtube": {
             # YouTube está forzando el protocolo "SABR" en el cliente web, que
             # bloquea los links de descarga directa (yt-dlp issue #12482).
-            # El cliente "tv" todavía entrega URLs usables sin pedir un token
-            # extra (PO Token) — se prioriza. Los demás quedan de respaldo.
-            "player_client": ["tv", "ios", "web_safari", "android"],
+            # El cliente "tv" es, por ahora (agosto 2026), el que de forma más
+            # confiable sigue entregando un stream usable sin pedir un token
+            # extra — cae a un formato combinado video+audio (menor calidad,
+            # ~360p) pero funciona.
+            "player_client": ["tv"],
         }
     },
 }
