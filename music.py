@@ -7,8 +7,9 @@ transmitir audio directo desde Spotify vía API pública — Spotify solo permit
 controlar SU PROPIA app oficial). Si el usuario pega un link de Spotify, se
 lee el nombre de la canción/artista y se busca en YouTube automáticamente.
 
-Requiere: yt-dlp, PyNaCl (voz) y el binario ffmpeg instalado en el sistema
-(ver nixpacks.toml).
+Requiere: yt-dlp, PyNaCl (voz) y ffmpeg. El ffmpeg viene incluido dentro de
+la librería de Python `imageio-ffmpeg` (no depende de que Railway lo instale
+a nivel de sistema — se resuelve solo, sin configuración extra).
 
 Comandos:
   ,play <nombre o link>   — busca/agrega una canción a la cola y la reproduce
@@ -36,13 +37,20 @@ import discord
 from discord.ext import commands
 import yt_dlp
 import aiohttp
+import imageio_ffmpeg
 
 from voice import EMOJI_SUCCESS, EMOJI_ERROR
+
+# ffmpeg incluido en la librería (sin depender de que el sistema/Railway lo
+# tenga instalado aparte) — se resuelve una sola vez al cargar este módulo.
+FFMPEG_EXECUTABLE = imageio_ffmpeg.get_ffmpeg_exe()
+log_ffmpeg = logging.getLogger("antinuke.music.ffmpeg")
+log_ffmpeg.info(f"Usando ffmpeg incluido en: {FFMPEG_EXECUTABLE}")
 
 log = logging.getLogger("antinuke.music")
 
 YTDL_OPTS = {
-    "format": "bestvideo*+bestaudio/best",
+    "format": "bestaudio/best",
     "noplaylist": True,
     "quiet": True,
     "no_warnings": True,
@@ -157,6 +165,7 @@ class GuildPlayer:
 
         ffmpeg_audio = discord.FFmpegPCMAudio(
             track.stream_url,
+            executable=FFMPEG_EXECUTABLE,
             before_options=before_options,
             options=FFMPEG_OPTS,
             stderr=sys.stdout,  # para que los errores de ffmpeg salgan en los logs de Railway
