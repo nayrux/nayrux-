@@ -29,6 +29,7 @@ import logging
 import os
 import random
 import re
+import sys
 from dataclasses import dataclass, field
 
 import discord
@@ -114,6 +115,7 @@ class Track:
     thumbnail: str | None
     duration: int | None
     requester: discord.Member
+    http_headers: dict = field(default_factory=dict)
 
 
 class GuildPlayer:
@@ -145,10 +147,19 @@ class GuildPlayer:
             pass
 
     def make_source(self, track: Track) -> discord.PCMVolumeTransformer:
+        before_options = FFMPEG_BEFORE_OPTS
+        if track.http_headers:
+            # Las URLs de audio de YouTube casi siempre necesitan estos
+            # encabezados para servir el audio real — sin ellos, ffmpeg se
+            # conecta "bien" pero no recibe datos (se queda en silencio).
+            header_lines = "".join(f"{k}: {v}\r\n" for k, v in track.http_headers.items())
+            before_options = f'{FFMPEG_BEFORE_OPTS} -headers "{header_lines}"'
+
         ffmpeg_audio = discord.FFmpegPCMAudio(
             track.stream_url,
-            before_options=FFMPEG_BEFORE_OPTS,
+            before_options=before_options,
             options=FFMPEG_OPTS,
+            stderr=sys.stdout,  # para que los errores de ffmpeg salgan en los logs de Railway
         )
         return discord.PCMVolumeTransformer(ffmpeg_audio, volume=self.volume)
 
@@ -221,6 +232,7 @@ async def _extract_track(query: str, requester: discord.Member) -> Track:
         thumbnail=info.get("thumbnail"),
         duration=info.get("duration"),
         requester=requester,
+        http_headers=info.get("http_headers") or {},
     )
 
 
