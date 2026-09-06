@@ -4,7 +4,7 @@ server:
 
 lavalink:
   server:
-    password: "${LAVALINK_PASSWORD}"
+    password: "${12345678910}"
     sources:
       youtube: false   # el soporte de YouTube ahora va por el plugin de abajo, no el built-in
       soundcloud: true
