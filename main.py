@@ -57,11 +57,18 @@ class AntiNukeBot(commands.Bot):
 
     async def setup_hook(self):
         try:
-            import imageio_ffmpeg
-            ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
-            log.info(f"✔ ffmpeg (incluido) encontrado en: {ffmpeg_path}")
+            import wavelink
+            lavalink_host = os.getenv("LAVALINK_HOST", "localhost")
+            lavalink_port = os.getenv("LAVALINK_PORT", "2333")
+            lavalink_password = os.getenv("LAVALINK_PASSWORD", "")
+            node = wavelink.Node(
+                uri=f"http://{lavalink_host}:{lavalink_port}",
+                password=lavalink_password,
+            )
+            await wavelink.Pool.connect(nodes=[node], client=self)
+            log.info(f"✔ Conectando al nodo de Lavalink en {lavalink_host}:{lavalink_port}")
         except Exception as e:
-            log.error(f"✘ No se pudo resolver ffmpeg (imageio-ffmpeg) — la música no va a funcionar: {e}")
+            log.error(f"✘ No se pudo conectar a Lavalink — la música no va a funcionar: {e}")
 
         cogs = [
             "backup",
