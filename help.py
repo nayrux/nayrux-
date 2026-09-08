@@ -42,25 +42,6 @@ CATEGORIES = {
             ], "Variables: `{user}` `{username}` `{server}` `{membercount}`"),
         ],
     },
-    "music": {
-        "label": "Music",
-        "description": "Reproduce música en tu canal de voz — búsqueda por nombre y artista, cola, y buena calidad.",
-        "sections": [
-            ("Music", [
-                ",play",
-                ",skip",
-                ",stop",
-                ",pause",
-                ",resume",
-                ",queue",
-                ",nowplaying",
-                ",volume",
-                ",leave",
-                ",loop",
-                ",shuffle",
-            ], None),
-        ],
-    },
     "integrations": {
         "label": "Integrations",
         "description": "Integración y búsquedas de Roblox.",
@@ -330,7 +311,6 @@ CATEGORIES = {
 }
 
 ALIASES = {
-    "music": "music", "musica": "music", "música": "music", "song": "music", "songs": "music",
     "utilities": "utilidades", "utils": "utilidades", "utilidades": "utilidades", "info": "utilidades",
     "roblox": "integrations", "rblx": "integrations", "integrations": "integrations", "integraciones": "integrations",
     "autorole": "automation", "autoreact": "automation", "autogreet": "automation",
