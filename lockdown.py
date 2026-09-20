@@ -3,7 +3,7 @@ lockdown.py — Bloqueo/ocultamiento masivo de canales (server lockdown).
 
 Comandos:
   ,lockdown                         — oculta y cierra todos los canales (excepto los exentos)
-  ,unlock                           — restaura los canales a como estaban antes del lockdown
+  ,unlockdown                       — restaura los canales a como estaban antes del lockdown
   ,lockdown exempt add <#canal>     — agrega un canal a la lista de exentos (no se toca)
   ,lockdown exempt remove <#canal>  — quita un canal de la lista de exentos
   ,lockdown exempt list             — muestra los canales exentos
@@ -44,7 +44,7 @@ class Lockdown(commands.Cog):
         config = db.get_guild(guild.id)
         if config.get("lockdown_active"):
             return await ctx.send(embed=discord.Embed(
-                description="El servidor ya está en lockdown. Usa `,unlock` para revertir.",
+                description="El servidor ya está en lockdown. Usa `,unlockdown` para revertir.",
                 color=0x2b2d31,
             ))
 
@@ -98,9 +98,9 @@ class Lockdown(commands.Cog):
             color=0xed4245,
         ))
 
-    @commands.command(name="unlock")
+    @commands.command(name="unlockdown")
     @commands.has_permissions(manage_guild=True)
-    async def unlock(self, ctx: commands.Context):
+    async def unlockdown(self, ctx: commands.Context):
         guild = ctx.guild
         config = db.get_guild(guild.id)
         state = config.get("lockdown_state", {})
