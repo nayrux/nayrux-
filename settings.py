@@ -365,6 +365,31 @@ class Settings(commands.Cog):
         color = 0x57f287 if enabled else 0xed4245
         await ctx.send(embed=build_embed(ctx.guild, f"Módulo `{module}` ha sido **{word}**.", color))
 
+    async def _open_module_panel(self, ctx, module_key: str):
+        """Atajo compartido: abre el panel de un módulo específico directo, sin pasar por ,antinuke module."""
+        from module_panel import build_module_embed, ModuleConfigView
+        embed = build_module_embed(self.bot, ctx.guild, module_key)
+        view = ModuleConfigView(self.bot, module_key)
+        await ctx.send(embed=embed, view=view)
+
+    @commands.command(name="antibot")
+    @is_manager()
+    async def antibot(self, ctx):
+        """Atajo a ,antinuke module botadd — protección contra bots agregados sin autorización."""
+        await self._open_module_panel(ctx, "botadd")
+
+    @commands.command(name="antiwebhook")
+    @is_manager()
+    async def antiwebhook(self, ctx):
+        """Atajo a ,antinuke module webhook — protección contra webhooks creados sin autorización."""
+        await self._open_module_panel(ctx, "webhook")
+
+    @commands.command(name="antimention")
+    @is_manager()
+    async def antimention(self, ctx):
+        """Atajo a ,antinuke module mention — protección contra spam de menciones."""
+        await self._open_module_panel(ctx, "mention")
+
     @antinuke.command(name="accountage", aliases=["acctage"])
     @is_manager()
     async def antinuke_accountage(self, ctx, days: int):
