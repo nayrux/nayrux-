@@ -6,19 +6,25 @@ Comandos:
   ,ban <@usuario> [razón] [días_borrado]
   ,softban <@usuario> [razón]
   ,unban <id_usuario> [razón]
-  ,mute <@usuario> <duración> [razón]        — timeout nativo de Discord
-  ,unmute <@usuario> [razón]
+  ,timeout <@usuario> <duración> [razón]     — timeout nativo de Discord (alias: mute)
+  ,untimeout <@usuario> [razón]              — (alias: unmute)
   ,warn <@usuario> [razón]
   ,warnings <@usuario>
-  ,clearwarns <@usuario>
-  ,delwarn <@usuario> <índice>
-  ,purge <cantidad> [@usuario]
-  ,lockchannel [#canal]
-  ,unlockchannel [#canal]
+  ,clearwarnings <@usuario>                  — (alias: clearwarns)
+  ,unwarn <@usuario> <índice>                — (alias: delwarn)
+  ,purge <cantidad 1-1000> [@usuario]
+  ,lock [#canal]                             — (alias: lockchannel)
+  ,unlock [#canal]                           — (alias: unlockchannel)
+  ,hide [#canal]
+  ,unhide [#canal]
+  ,nuke [#canal]                             — clona y borra el canal (lo reinicia)
   ,slowmode <segundos> [#canal]
-  ,nick <@usuario> <apodo|reset>
-  ,role add <@usuario> <@rol>
+  ,nickname <@usuario> <apodo|reset>         — (alias: nick)
+  ,role <@usuario> <@rol>                    — añade un rol
   ,role remove <@usuario> <@rol>
+  ,role info <@rol>
+  ,roleall <@rol>                            — añade el rol a todos los miembros
+  ,unroleall <@rol>                          — quita el rol a todos los miembros
   ,modlogs <@usuario>
 """
 
@@ -216,10 +222,10 @@ class Moderation(commands.Cog):
 
     # ── Mute / Unmute (timeout nativo) ───────────────────────────────────────
 
-    @commands.command(name="mute", aliases=["timeout"])
+    @commands.command(name="timeout", aliases=["mute"])
     @commands.has_permissions(moderate_members=True)
     @commands.bot_has_permissions(moderate_members=True)
-    async def mute(self, ctx: commands.Context, member: discord.Member, duration: str, *, reason: str = "Sin razón especificada"):
+    async def timeout(self, ctx: commands.Context, member: discord.Member, duration: str, *, reason: str = "Sin razón especificada"):
         error = _hierarchy_error(ctx, member)
         if error:
             return await ctx.send(embed=discord.Embed(description=error, color=0xed4245))
@@ -246,10 +252,10 @@ class Moderation(commands.Cog):
             reason=reason, extra_fields=[("Duración", f"`{duration}`", True)], color=0xed4245,
         )
 
-    @commands.command(name="unmute")
+    @commands.command(name="untimeout", aliases=["unmute"])
     @commands.has_permissions(moderate_members=True)
     @commands.bot_has_permissions(moderate_members=True)
-    async def unmute(self, ctx: commands.Context, member: discord.Member, *, reason: str = "Sin razón especificada"):
+    async def untimeout(self, ctx: commands.Context, member: discord.Member, *, reason: str = "Sin razón especificada"):
         if member.timed_out_until is None:
             return await ctx.send(embed=discord.Embed(description="Ese usuario no está silenciado.", color=0xed4245))
 
@@ -329,9 +335,9 @@ class Moderation(commands.Cog):
         embed.set_thumbnail(url=member.display_avatar.url)
         await ctx.send(embed=embed)
 
-    @commands.command(name="clearwarns")
+    @commands.command(name="clearwarnings", aliases=["clearwarns"])
     @commands.has_permissions(kick_members=True)
-    async def clearwarns(self, ctx: commands.Context, member: discord.Member):
+    async def clearwarnings(self, ctx: commands.Context, member: discord.Member):
         config = db.get_guild(ctx.guild.id)
         warns = config.get("warns", {})
         count = len(warns.pop(str(member.id), []))
@@ -343,9 +349,9 @@ class Moderation(commands.Cog):
             color=0x57f287,
         ))
 
-    @commands.command(name="delwarn")
+    @commands.command(name="unwarn", aliases=["delwarn"])
     @commands.has_permissions(kick_members=True)
-    async def delwarn(self, ctx: commands.Context, member: discord.Member, index: int):
+    async def unwarn(self, ctx: commands.Context, member: discord.Member, index: int):
         config = db.get_guild(ctx.guild.id)
         warns = config.get("warns", {})
         key = str(member.id)
@@ -373,7 +379,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def purge(self, ctx: commands.Context, amount: int, member: discord.Member = None):
-        amount = max(1, min(amount, 200))
+        amount = max(1, min(amount, 1000))
 
         def check(m: discord.Message):
             return member is None or m.author.id == member.id
@@ -390,10 +396,10 @@ class Moderation(commands.Cog):
 
     # ── Canales: lock / unlock / slowmode ───────────────────────────────────
 
-    @commands.command(name="lockchannel")
+    @commands.command(name="lock", aliases=["lockchannel"])
     @commands.has_permissions(manage_channels=True)
     @commands.bot_has_permissions(manage_channels=True)
-    async def lockchannel(self, ctx: commands.Context, channel: discord.TextChannel = None):
+    async def lock(self, ctx: commands.Context, channel: discord.TextChannel = None):
         channel = channel or ctx.channel
         overwrite = channel.overwrites_for(ctx.guild.default_role)
         overwrite.send_messages = False
@@ -404,10 +410,10 @@ class Moderation(commands.Cog):
             color=0x57f287,
         ))
 
-    @commands.command(name="unlockchannel")
+    @commands.command(name="unlock", aliases=["unlockchannel"])
     @commands.has_permissions(manage_channels=True)
     @commands.bot_has_permissions(manage_channels=True)
-    async def unlockchannel(self, ctx: commands.Context, channel: discord.TextChannel = None):
+    async def unlock(self, ctx: commands.Context, channel: discord.TextChannel = None):
         channel = channel or ctx.channel
         overwrite = channel.overwrites_for(ctx.guild.default_role)
         overwrite.send_messages = None
@@ -432,12 +438,56 @@ class Moderation(commands.Cog):
             desc = f"Slowmode de {channel.mention} ajustado a `{seconds}s`."
         await ctx.send(embed=discord.Embed(description=desc, color=0x57f287))
 
+    @commands.command(name="hide")
+    @commands.has_permissions(manage_channels=True)
+    @commands.bot_has_permissions(manage_channels=True)
+    async def hide(self, ctx: commands.Context, channel: discord.TextChannel = None):
+        channel = channel or ctx.channel
+        overwrite = channel.overwrites_for(ctx.guild.default_role)
+        overwrite.view_channel = False
+        await channel.set_permissions(ctx.guild.default_role, overwrite=overwrite, reason=f"Ocultado por {ctx.author}")
+
+        await ctx.send(embed=discord.Embed(
+            description=f"{channel.mention} fue ocultado. @everyone ya no puede verlo.",
+            color=0x57f287,
+        ))
+
+    @commands.command(name="unhide")
+    @commands.has_permissions(manage_channels=True)
+    @commands.bot_has_permissions(manage_channels=True)
+    async def unhide(self, ctx: commands.Context, channel: discord.TextChannel = None):
+        channel = channel or ctx.channel
+        overwrite = channel.overwrites_for(ctx.guild.default_role)
+        overwrite.view_channel = None
+        await channel.set_permissions(ctx.guild.default_role, overwrite=overwrite, reason=f"Revelado por {ctx.author}")
+
+        await ctx.send(embed=discord.Embed(
+            description=f"{channel.mention} vuelve a ser visible.",
+            color=0x57f287,
+        ))
+
+    @commands.command(name="nuke")
+    @commands.has_permissions(manage_channels=True)
+    @commands.bot_has_permissions(manage_channels=True)
+    async def nuke(self, ctx: commands.Context, channel: discord.TextChannel = None):
+        channel = channel or ctx.channel
+        position = channel.position
+
+        new_channel = await channel.clone(reason=f"Nuke por {ctx.author}")
+        await new_channel.edit(position=position)
+        await channel.delete(reason=f"Nuke por {ctx.author}")
+
+        await new_channel.send(embed=discord.Embed(
+            description="Este canal fue reiniciado.",
+            color=0x57f287,
+        ))
+
     # ── Nick / Roles ─────────────────────────────────────────────────────────
 
-    @commands.command(name="nick")
+    @commands.command(name="nickname", aliases=["nick"])
     @commands.has_permissions(manage_nicknames=True)
     @commands.bot_has_permissions(manage_nicknames=True)
-    async def nick(self, ctx: commands.Context, member: discord.Member, *, nickname: str = None):
+    async def nickname(self, ctx: commands.Context, member: discord.Member, *, nickname: str = None):
         if nickname and nickname.lower() == "reset":
             nickname = None
         if member.id != ctx.author.id:
@@ -450,16 +500,15 @@ class Moderation(commands.Cog):
         await ctx.send(embed=discord.Embed(description=desc, color=0x57f287))
 
     @commands.group(name="role", invoke_without_command=True)
-    async def role(self, ctx: commands.Context):
-        await ctx.send(embed=discord.Embed(
-            description="Usa `,role add <@usuario> <@rol>` o `,role remove <@usuario> <@rol>`.",
-            color=0x2b2d31,
-        ))
-
-    @role.command(name="add")
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    async def role_add(self, ctx: commands.Context, member: discord.Member, role: discord.Role):
+    async def role(self, ctx: commands.Context, member: discord.Member = None, role: discord.Role = None):
+        if member is None or role is None:
+            return await ctx.send(embed=discord.Embed(
+                description="Usa `,role <@usuario> <@rol>` para añadir, `,role remove <@usuario> <@rol>` para quitar, "
+                            "o `,role info <@rol>` para ver información del rol.",
+                color=0x2b2d31,
+            ))
         if role >= ctx.guild.me.top_role:
             return await ctx.send(embed=discord.Embed(description="Ese rol está por encima del mío, no puedo asignarlo.", color=0xed4245))
         if ctx.author.id != ctx.guild.owner_id and role >= ctx.author.top_role:
@@ -483,6 +532,68 @@ class Moderation(commands.Cog):
         await member.remove_roles(role, reason=f"Removido por {ctx.author}")
         await ctx.send(embed=discord.Embed(
             description=f"Se quitó el rol {role.mention} a {member.mention}.",
+            color=0x57f287,
+        ))
+
+    @role.command(name="info")
+    async def role_info(self, ctx: commands.Context, *, role: discord.Role):
+        e = discord.Embed(title=role.name, color=role.color if role.color.value else 0x2b2d31)
+        e.add_field(name="ID", value=str(role.id), inline=True)
+        e.add_field(name="Color", value=str(role.color), inline=True)
+        e.add_field(name="Posición", value=str(role.position), inline=True)
+        e.add_field(name="Miembros", value=str(len(role.members)), inline=True)
+        e.add_field(name="Mencionable", value="Sí" if role.mentionable else "No", inline=True)
+        e.add_field(name="Se muestra aparte", value="Sí" if role.hoist else "No", inline=True)
+        e.add_field(name="Creado", value=discord.utils.format_dt(role.created_at, "R"), inline=True)
+        await ctx.send(embed=e)
+
+    @commands.command(name="roleall")
+    @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    async def roleall(self, ctx: commands.Context, *, role: discord.Role):
+        if role >= ctx.guild.me.top_role:
+            return await ctx.send(embed=discord.Embed(description="Ese rol está por encima del mío, no puedo asignarlo.", color=0xed4245))
+        if ctx.author.id != ctx.guild.owner_id and role >= ctx.author.top_role:
+            return await ctx.send(embed=discord.Embed(description="No puedes asignar un rol igual o superior al tuyo.", color=0xed4245))
+
+        msg = await ctx.send(embed=discord.Embed(description=f"Asignando {role.mention} a todos los miembros...", color=0x2b2d31))
+        added = 0
+        for member in ctx.guild.members:
+            if member.bot or role in member.roles:
+                continue
+            try:
+                await member.add_roles(role, reason=f"Roleall por {ctx.author}")
+                added += 1
+            except discord.HTTPException:
+                continue
+
+        await msg.edit(embed=discord.Embed(
+            description=f"Se asignó {role.mention} a `{added}` miembro(s).",
+            color=0x57f287,
+        ))
+
+    @commands.command(name="unroleall")
+    @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    async def unroleall(self, ctx: commands.Context, *, role: discord.Role):
+        if role >= ctx.guild.me.top_role:
+            return await ctx.send(embed=discord.Embed(description="Ese rol está por encima del mío, no puedo quitarlo.", color=0xed4245))
+        if ctx.author.id != ctx.guild.owner_id and role >= ctx.author.top_role:
+            return await ctx.send(embed=discord.Embed(description="No puedes quitar un rol igual o superior al tuyo.", color=0xed4245))
+
+        msg = await ctx.send(embed=discord.Embed(description=f"Quitando {role.mention} a todos los miembros...", color=0x2b2d31))
+        removed = 0
+        for member in ctx.guild.members:
+            if role not in member.roles:
+                continue
+            try:
+                await member.remove_roles(role, reason=f"Unroleall por {ctx.author}")
+                removed += 1
+            except discord.HTTPException:
+                continue
+
+        await msg.edit(embed=discord.Embed(
+            description=f"Se quitó {role.mention} a `{removed}` miembro(s).",
             color=0x57f287,
         ))
 
